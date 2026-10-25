@@ -1,0 +1,208 @@
+name: Production Build
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to build'
+        required: true
+        type: string
+      tag_name:
+        description: 'GitHub release tag'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build'
+        required: true
+        type: string
+      tag_name:
+        description: 'GitHub release tag'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Build
+        run: |
+          mkdir -p bin dist
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X github.com/Makr91/disk-agent/internal/version.Version=${{ inputs.version }}" \
+            -o bin/disk-agent .
+
+      - name: Build Debian package
+        run: |
+          VERSION="${{ inputs.version }}"
+          ARCH=amd64
+          STAGE="dist/disk-agent_${VERSION}_${ARCH}"
+          mkdir -p "$STAGE"/usr/bin \
+                   "$STAGE"/etc/disk-agent \
+                   "$STAGE"/etc/systemd/system \
+                   "$STAGE"/etc/sudoers.d \
+                   "$STAGE"/usr/share/man/man8 \
+                   "$STAGE"/usr/share/man/man5 \
+                   "$STAGE"/usr/share/disk-agent/config \
+                   "$STAGE"/DEBIAN
+          cp bin/disk-agent "$STAGE/usr/bin/"
+          cp internal/config/seed/*.config.yaml "$STAGE/usr/share/disk-agent/config/"
+          cp packaging/DEBIAN/systemd/disk-agent.service "$STAGE/etc/systemd/system/"
+          cp packaging/DEBIAN/sudoers/disk-agent "$STAGE/etc/sudoers.d/disk-agent"
+          gzip -9 -c packaging/DEBIAN/man/disk-agent.8 > "$STAGE/usr/share/man/man8/disk-agent.8.gz"
+          gzip -9 -c packaging/DEBIAN/man/disk-agent.yaml.5 > "$STAGE/usr/share/man/man5/disk-agent.yaml.5.gz"
+          cp packaging/DEBIAN/postinst packaging/DEBIAN/prerm packaging/DEBIAN/postrm "$STAGE/DEBIAN/"
+
+          cat > "$STAGE/DEBIAN/control" << EOF
+          Package: disk-agent
+          Version: ${VERSION}
+          Section: admin
+          Priority: optional
+          Architecture: ${ARCH}
+          Depends: adduser, sudo, smartmontools, zfsutils-linux
+          Maintainer: Makr91 <makr91@users.noreply.github.com>
+          Description: Disk Agent - SMART and ZFS pool state for Home Assistant
+           Single-binary host agent that serves the SMART state of every disk
+           and the state of every ZFS pool as JSON over HTTP for the
+           ha_disk_monitor Home Assistant integration to poll.
+          Homepage: https://github.com/Makr91/disk-agent
+          EOF
+
+          find "$STAGE" -type d -exec chmod 755 {} \;
+          find "$STAGE" -type f -exec chmod 644 {} \;
+          chmod 755 "$STAGE/usr/bin/disk-agent" "$STAGE/DEBIAN"/postinst "$STAGE/DEBIAN"/prerm "$STAGE/DEBIAN"/postrm
+          chmod 440 "$STAGE/etc/sudoers.d/disk-agent"
+
+          dpkg-deb --build --root-owner-group "$STAGE" "dist/disk-agent_${VERSION}_${ARCH}.deb"
+
+      - name: Upload release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ inputs.tag_name }}" \
+            "dist/disk-agent_${{ inputs.version }}_amd64.deb" \
+            --clobber
+
+      - name: Generate and upload SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd dist
+          sha256sum disk-agent_*.deb > SHA256SUMS.txt
+          gh release upload "${{ inputs.tag_name }}" SHA256SUMS.txt --clobber
+
+      - name: Generate and upload update-info.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ inputs.tag_name }}"
+          DL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+          NOTES="$(gh release view "${TAG}" --json body --jq .body | jq -Rs .)"
+          cat > update-info.json << EOF
+          {
+            "version": "${{ inputs.version }}",
+            "releaseUrl": "https://github.com/${{ github.repository }}/releases/tag/${TAG}",
+            "releaseDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "changelog": "https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md",
+            "releaseNotes": ${NOTES},
+            "linuxUrl": "${DL}/disk-agent_${{ inputs.version }}_amd64.deb",
+            "checksumsUrl": "${DL}/SHA256SUMS.txt"
+          }
+          EOF
+          gh release upload "${TAG}" update-info.json --clobber
+
+  publish-debian:
+    name: Publish Debian repository
+    needs: build-linux
+    runs-on: self-hosted
+    steps:
+      - name: Download Debian package
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          rm -f disk-agent_*.deb
+          gh release download "${{ inputs.tag_name }}" --repo "${{ github.repository }}" --pattern 'disk-agent_*.deb'
+
+      - name: Upload Debian package to repository server
+        run: |
+          rsync -av disk-agent_*.deb startcloud@debian.startcloud.com:/tmp/
+
+      - name: Add package to repository pool
+        run: |
+          ssh startcloud@debian.startcloud.com "
+            mkdir -p /local/public/debian/pool/main/d/disk-agent
+            cp /tmp/disk-agent_*.deb /local/public/debian/pool/main/d/disk-agent/
+          "
+
+      - name: Create multi-suite directory structure
+        run: |
+          ssh startcloud@debian.startcloud.com "
+            cd /local/public/debian
+            mkdir -p dists/bookworm/main/binary-amd64
+            mkdir -p dists/trixie/main/binary-amd64
+          "
+
+      - name: Update repository Packages files for all suites
+        run: |
+          ssh startcloud@debian.startcloud.com "
+            cd /local/public/debian
+            for suite in bookworm trixie; do
+              dpkg-scanpackages --arch amd64 pool/ > dists/\$suite/main/binary-amd64/Packages
+              gzip -c dists/\$suite/main/binary-amd64/Packages > dists/\$suite/main/binary-amd64/Packages.gz
+            done
+          "
+
+      - name: Generate Release files for all suites
+        run: |
+          ssh startcloud@debian.startcloud.com "
+            cd /local/public/debian
+            for suite in bookworm trixie; do
+              cd dists/\$suite
+              /local/generate-release.sh \$suite > Release
+              cd ../..
+            done
+          "
+
+      - name: Create stable distribution with proper Release file
+        run: |
+          ssh startcloud@debian.startcloud.com "
+            cd /local/public/debian/dists
+            rm -rf stable 2>/dev/null || true
+            cp -r trixie stable
+            cd stable
+            /local/generate-release.sh stable > Release
+          "
+
+      - name: Sign repository for all suites including stable
+        run: |
+          ssh startcloud@debian.startcloud.com "
+            cd /local/public/debian
+            for suite in bookworm trixie stable; do
+              cd dists/\$suite
+              export GNUPGHOME=\$(mktemp -d /local/pgp/pgpkeys-XXXXXX)
+              cat /local/pgp/pgp-key.private | gpg --import
+              cat Release | gpg --default-key startcloud -abs > Release.gpg
+              cat Release | gpg --default-key startcloud -abs --clearsign > InRelease
+              rm -rf \$GNUPGHOME
+              cd ../..
+            done
+          "
+
+      - name: Cleanup temporary files
+        run: |
+          ssh startcloud@debian.startcloud.com "rm -f /tmp/disk-agent_*.deb"
+          rm -f disk-agent_*.deb

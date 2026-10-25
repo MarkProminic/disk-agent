@@ -1,0 +1,89 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+set name=pkg.fmri value=system/monitoring/disk-agent@@VERSION@
+set name=pkg.summary value="Disk Agent - SMART and ZFS pool state for Home Assistant"
+set name=pkg.description value="Single-binary host agent that serves the SMART state of every disk and the state of every ZFS pool as JSON over HTTP for the ha_disk_monitor Home Assistant integration to poll."
+set name=info.classification value="org.opensolaris.category.2008:System/Administration and Configuration"
+set name=info.upstream value="Makr91"
+set name=info.upstream-url value="https://github.com/Makr91/disk-agent"
+
+depend fmri=ooce/system/smartmontools type=require
+
+user username=diskagent uid=302 group=diskagent gcos-field="Disk Agent Service User" \
+    home-dir=/var/lib/disk-agent login-shell=/usr/bin/bash
+group groupname=diskagent gid=302
+
+license opt/disk-agent/LICENSE.md license="GPL-3.0" must-accept=false
+
+<transform dir path=^opt$ -> drop>
+<transform dir path=^etc$ -> drop>
+<transform dir path=^var$ -> drop>
+<transform dir path=^lib$ -> drop>
+<transform dir path=lib/svc$ -> drop>
+<transform dir path=lib/svc/manifest$ -> drop>
+<transform dir path=lib/svc/manifest/system$ -> drop>
+<transform dir path=var/lib$ -> drop>
+<transform dir path=var/log$ -> drop>
+<transform dir path=opt/ooce$ -> drop>
+<transform dir path=opt/ooce/share$ -> drop>
+<transform dir path=opt/ooce/share/man$ -> drop>
+<transform dir path=opt/ooce/share/man/man8$ -> drop>
+<transform dir path=opt/ooce/share/man/man5$ -> drop>
+
+<transform dir path=opt/disk-agent$ -> set owner diskagent>
+<transform dir path=opt/disk-agent$ -> set group diskagent>
+<transform dir path=opt/disk-agent$ -> set mode 0755>
+
+<transform file path=opt/disk-agent/.* -> set owner diskagent>
+<transform file path=opt/disk-agent/.* -> set group diskagent>
+<transform file path=opt/disk-agent/.* -> set mode 0644>
+
+<transform file path=opt/disk-agent/disk-agent -> set mode 0755>
+
+<transform file path=opt/disk-agent/startup.sh -> set owner root>
+<transform file path=opt/disk-agent/startup.sh -> set group sys>
+<transform file path=opt/disk-agent/startup.sh -> set mode 0755>
+
+<transform dir path=etc/disk-agent$ -> set owner diskagent>
+<transform dir path=etc/disk-agent$ -> set group diskagent>
+<transform dir path=etc/disk-agent$ -> set mode 0750>
+
+<transform file path=etc/disk-agent/.*\.config\.yaml -> set owner diskagent>
+<transform file path=etc/disk-agent/.*\.config\.yaml -> set group diskagent>
+<transform file path=etc/disk-agent/.*\.config\.yaml -> set mode 0600>
+<transform file path=etc/disk-agent/.*\.config\.yaml -> set preserve true>
+
+<transform dir path=etc/user_attr.d$ -> drop>
+<transform file path=etc/user_attr.d/disk-agent -> set owner root>
+<transform file path=etc/user_attr.d/disk-agent -> set group sys>
+<transform file path=etc/user_attr.d/disk-agent -> set mode 0644>
+
+<transform dir path=etc/disk-agent/ssl -> set owner diskagent>
+<transform dir path=etc/disk-agent/ssl -> set group diskagent>
+<transform dir path=etc/disk-agent/ssl -> set mode 0700>
+
+<transform dir path=var/lib/disk-agent$ -> set owner diskagent>
+<transform dir path=var/lib/disk-agent$ -> set group diskagent>
+<transform dir path=var/lib/disk-agent$ -> set mode 0755>
+
+<transform dir path=var/log/disk-agent -> set owner diskagent>
+<transform dir path=var/log/disk-agent -> set group diskagent>
+<transform dir path=var/log/disk-agent -> set mode 0755>
+
+<transform file path=opt/ooce/share/man/.* -> set owner root>
+<transform file path=opt/ooce/share/man/.* -> set group bin>
+<transform file path=opt/ooce/share/man/.* -> set mode 0444>
+
+<transform file path=lib/svc/manifest/system/disk-agent.xml -> set owner root>
+<transform file path=lib/svc/manifest/system/disk-agent.xml -> set group sys>
+<transform file path=lib/svc/manifest/system/disk-agent.xml -> set mode 0644>
+<transform file path=lib/svc/manifest/system/disk-agent.xml -> set restart_fmri svc:/system/manifest-import:default>

@@ -1,0 +1,52 @@
+<?xml version='1.0'?>
+<!DOCTYPE service_bundle SYSTEM '/usr/share/lib/xml/dtd/service_bundle.dtd.1'>
+<service_bundle type='manifest' name='disk-agent'>
+  <service name='system/monitoring/disk-agent' type='service' version='1'>
+    <create_default_instance enabled='false'/>
+    <single_instance/>
+
+    <dependency name='filesystems' grouping='require_all' restart_on='none' type='service'>
+      <service_fmri value='svc:/system/filesystem/local:default'/>
+    </dependency>
+
+    <dependency name='network' grouping='require_all' restart_on='none' type='service'>
+      <service_fmri value='svc:/milestone/network:default'/>
+    </dependency>
+
+    <exec_method name='start' type='method' exec='/opt/disk-agent/startup.sh' timeout_seconds='60'>
+      <method_context working_directory='/opt/disk-agent'>
+        <method_credential user='diskagent' group='diskagent'
+            privileges='basic,net_privaddr,file_dac_read' />
+        <method_environment>
+          <envvar name='PATH' value='/opt/ooce/bin:/opt/ooce/sbin:/usr/bin:/usr/sbin:/sbin'/>
+          <envvar name='CONFIG_DIR' value='/etc/disk-agent'/>
+          <envvar name='HOME' value='/var/lib/disk-agent'/>
+        </method_environment>
+      </method_context>
+    </exec_method>
+
+    <exec_method name='stop' type='method' exec=':kill' timeout_seconds='30' />
+
+    <exec_method name='refresh' type='method' exec=':true' timeout_seconds='30' />
+
+    <stability value='Evolving' />
+
+    <template>
+      <common_name>
+        <loctext xml:lang='C'>Disk Agent</loctext>
+      </common_name>
+      <description>
+        <loctext xml:lang='C'>
+          Serves the SMART state of every disk and the state of every ZFS
+          pool as JSON over HTTP for the ha_disk_monitor Home Assistant
+          integration to poll.
+        </loctext>
+      </description>
+      <documentation>
+        <manpage title='disk-agent' section='8' />
+        <doc_link name='Disk Agent Project'
+                  uri='https://github.com/Makr91/disk-agent' />
+      </documentation>
+    </template>
+  </service>
+</service_bundle>

@@ -1,0 +1,27 @@
+[Unit]
+Description=Disk Agent - SMART and ZFS pool state for Home Assistant
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=disk-agent
+Group=disk-agent
+WorkingDirectory=/var/lib/disk-agent
+ExecStart=/usr/bin/disk-agent --config /etc/disk-agent
+Restart=always
+RestartSec=3
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ConfigurationDirectory=disk-agent
+ConfigurationDirectoryMode=0750
+ReadWritePaths=/etc/disk-agent /var/lib/disk-agent /var/log/disk-agent
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=disk-agent
+
+[Install]
+WantedBy=multi-user.target

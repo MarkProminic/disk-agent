@@ -1,0 +1,5 @@
+schemaVersion: 1
+collection:
+  smartctl_path: /usr/sbin/smartctl
+  zpool_path: /sbin/zpool
+  privilege_command: sudo

@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    remove)
+        echo "Disk Agent removed but user and data preserved"
+        ;;
+    purge)
+        echo "Purging Disk Agent completely..."
+
+        if getent passwd disk-agent > /dev/null 2>&1; then
+            deluser disk-agent || true
+        fi
+
+        rm -rf /var/lib/disk-agent
+        rm -rf /var/log/disk-agent
+        rm -rf /etc/disk-agent
+
+        echo "Disk Agent completely removed"
+        ;;
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+systemctl daemon-reload || true
+
+#DEBHELPER#

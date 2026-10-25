@@ -1,0 +1,367 @@
+package server
+
+import (
+	"encoding/json"
+	"errors"
+	"io"
+	"log/slog"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/Makr91/disk-agent/internal/auth"
+	"github.com/Makr91/disk-agent/internal/keys"
+	"github.com/Makr91/disk-agent/internal/problem"
+)
+
+func writeJSON(w http.ResponseWriter, payload any) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		slog.Error("write json response", "error", err)
+	}
+}
+
+// decodeBody unmarshals a JSON request body into dst, treating an empty body
+// as an empty object.
+func decodeBody(r *http.Request, dst any) error {
+	err := json.NewDecoder(r.Body).Decode(dst)
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+	return err
+}
+
+type bootstrapRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	SetupToken  string `json:"setup_token"`
+}
+
+type bootstrapKeyResponse struct {
+	APIKey  string `json:"api_key"`
+	Message string `json:"message"`
+	Note    string `json:"note"`
+}
+
+// @Summary		Create the first API key
+// @Description	Public, but gated: requires `api_keys.bootstrap_enabled`, locks after the first key when `bootstrap_auto_disable` is on, and (by default) demands the setup claim token written to `setup.token` beside the agent's config file and printed to the startup log. The first key is always an admin key.
+// @Tags			API Keys
+// @Accept			json
+// @Produce		json
+// @Param			body	body	bootstrapRequest	false	"Optional name, description, and setup claim token"
+// @Success		200	{object}	bootstrapKeyResponse	"Key created, shown once, only a hash is stored"
+// @Failure		400	{object}	problem.Body	"Invalid JSON body"
+// @Failure		403	{object}	problem.Body	"Bootstrap disabled, auto-disabled, or setup token invalid"
+// @Router			/api/api-keys/bootstrap [post]
+func (s *Server) handleBootstrapKey(w http.ResponseWriter, r *http.Request) {
+	akCfg := s.cfg.APIKeys
+
+	if !akCfg.BootstrapEnabled {
+		auth.WriteMsg(w, http.StatusForbidden, "Bootstrap endpoint is disabled")
+		return
+	}
+	if s.keys.Count() > 0 && akCfg.BootstrapAutoDisable {
+		auth.WriteMsg(w, http.StatusForbidden, "Bootstrap endpoint auto-disabled after first use")
+		return
+	}
+
+	var body bootstrapRequest
+	if err := decodeBody(r, &body); err != nil {
+		auth.WriteMsg(w, http.StatusBadRequest, "Invalid JSON body")
+		return
+	}
+
+	if akCfg.BootstrapRequireClaimToken {
+		if !auth.VerifySetupToken(s.cfg.SetupTokenPath(), body.SetupToken) {
+			auth.WriteMsg(w, http.StatusForbidden,
+				"Invalid or missing setup token. Read it from the agent host (setup.token beside the config file, or the startup log) and send it as setup_token.")
+			return
+		}
+	}
+
+	apiKey, err := keys.GenerateKeyString(akCfg.KeyLength)
+	if err != nil {
+		slog.Error("bootstrap key generation failed", "error", err)
+		auth.WriteMsg(w, http.StatusInternalServerError, "Bootstrap failed")
+		return
+	}
+
+	name := body.Name
+	if name == "" {
+		name = "Bootstrap-Key"
+	}
+	description := body.Description
+	if description == "" {
+		description = "Initial bootstrap API key"
+	}
+
+	if _, err := s.keys.Create(apiKey, name, description, "admin", akCfg.HashRounds); err != nil {
+		slog.Error("bootstrap key creation failed", "error", err)
+		auth.WriteMsg(w, http.StatusInternalServerError, "Bootstrap failed")
+		return
+	}
+
+	note := "Bootstrap endpoint will be auto-disabled for future requests"
+	if !akCfg.BootstrapAutoDisable {
+		note = "Bootstrap endpoint remains enabled per configuration"
+	}
+	slog.Info("bootstrap api key created", "name", name)
+
+	writeJSON(w, bootstrapKeyResponse{
+		APIKey:  apiKey,
+		Message: "Bootstrap API key generated successfully",
+		Note:    note,
+	})
+}
+
+type generateRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Role        string `json:"role"`
+}
+
+type generateKeyResponse struct {
+	APIKey      string `json:"api_key"`
+	EntityID    int64  `json:"entity_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Role        string `json:"role"`
+	Message     string `json:"message"`
+}
+
+// @Summary		Generate a new API key
+// @Description	Minimum role: admin.
+// @Tags			API Keys
+// @Accept			json
+// @Produce		json
+// @Param			body	body	generateRequest	true	"New key name, optional description, and role"
+// @Success		200	{object}	generateKeyResponse	"Key created, shown once, only a hash is stored"
+// @Failure		400	{object}	problem.Body	"Unreadable body"
+// @Failure		422	{object}	problem.Body	"name missing (required at /name) or role outside admin, operator, viewer (enum at /role)"
+// @Failure		401	{object}	problem.Body	"Missing API key"
+// @Failure		403	{object}	problem.Body	"Invalid key or insufficient role"
+// @Router			/api/api-keys/generate [post]
+func (s *Server) handleGenerateKey(w http.ResponseWriter, r *http.Request) {
+	var body generateRequest
+	if err := decodeBody(r, &body); err != nil {
+		problem.BadRequest(w)
+		return
+	}
+	failures := []problem.Error{}
+	if body.Name == "" {
+		failures = append(failures, problem.Required("/name"))
+	}
+	role := body.Role
+	if role == "" {
+		role = "admin"
+	}
+	if !keys.RoleValid(role) {
+		failures = append(failures, problem.Enum("/role", "admin", "operator", "viewer"))
+	}
+	if len(failures) > 0 {
+		problem.Invalid(w, failures...)
+		return
+	}
+
+	akCfg := s.cfg.APIKeys
+	apiKey, err := keys.GenerateKeyString(akCfg.KeyLength)
+	if err != nil {
+		slog.Error("key generation failed", "error", err)
+		auth.WriteMsg(w, http.StatusInternalServerError, "Failed to generate API key")
+		return
+	}
+
+	entity, err := s.keys.Create(apiKey, body.Name, body.Description, role, akCfg.HashRounds)
+	if err != nil {
+		slog.Error("key creation failed", "error", err, "name", body.Name)
+		auth.WriteMsg(w, http.StatusInternalServerError, "Failed to generate API key")
+		return
+	}
+	slog.Info("api key created", "name", entity.Name, "role", entity.Role,
+		"created_by", auth.FromContext(r.Context()).Name)
+
+	writeJSON(w, generateKeyResponse{
+		APIKey:      apiKey,
+		EntityID:    entity.ID,
+		Name:        entity.Name,
+		Description: entity.Description,
+		Role:        entity.Role,
+		Message:     "API key generated successfully",
+	})
+}
+
+// entityJSON is the sanitized key representation (never the hash).
+type entityJSON struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Role        string    `json:"role"`
+	IsActive    bool      `json:"is_active"`
+	CreatedAt   time.Time `json:"created_at"`
+	LastUsed    time.Time `json:"last_used"`
+}
+
+type listKeysResponse struct {
+	Entities []entityJSON `json:"entities"`
+	Total    int          `json:"total"`
+}
+
+// @Summary		List all API keys
+// @Description	Minimum role: admin. Hashes are never returned.
+// @Tags			API Keys
+// @Produce		json
+// @Success		200	{object}	listKeysResponse	"All keys, newest first"
+// @Failure		401	{object}	problem.Body	"Missing API key"
+// @Failure		403	{object}	problem.Body	"Invalid key or insufficient role"
+// @Router			/api/api-keys [get]
+func (s *Server) handleListKeys(w http.ResponseWriter, _ *http.Request) {
+	list := s.keys.List()
+	entities := make([]entityJSON, 0, len(list))
+	for _, k := range list {
+		entities = append(entities, entityJSON{
+			ID:          k.ID,
+			Name:        k.Name,
+			Description: k.Description,
+			Role:        k.Role,
+			IsActive:    k.IsActive,
+			CreatedAt:   k.CreatedAt,
+			LastUsed:    k.LastUsed,
+		})
+	}
+	writeJSON(w, listKeysResponse{
+		Entities: entities,
+		Total:    len(entities),
+	})
+}
+
+type keyInfoResponse struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Role        string    `json:"role"`
+	CreatedAt   time.Time `json:"created_at"`
+	LastUsed    time.Time `json:"last_used"`
+}
+
+// @Summary		Describe the calling key
+// @Description	Minimum role: viewer (every valid key may inspect itself).
+// @Tags			API Keys
+// @Produce		json
+// @Success		200	{object}	keyInfoResponse	"The calling key's attributes"
+// @Failure		401	{object}	problem.Body	"Missing API key"
+// @Failure		403	{object}	problem.Body	"Invalid API key"
+// @Router			/api/api-keys/info [get]
+func (s *Server) handleKeyInfo(w http.ResponseWriter, r *http.Request) {
+	identity := auth.FromContext(r.Context())
+	if identity == nil {
+		auth.WriteMsg(w, http.StatusUnauthorized, "API key required")
+		return
+	}
+	k, err := s.keys.Get(identity.ID)
+	if err != nil {
+		auth.WriteMsg(w, http.StatusNotFound, "Entity not found")
+		return
+	}
+	writeJSON(w, keyInfoResponse{
+		ID:          k.ID,
+		Name:        k.Name,
+		Description: k.Description,
+		Role:        k.Role,
+		CreatedAt:   k.CreatedAt,
+		LastUsed:    k.LastUsed,
+	})
+}
+
+type deleteKeyResponse struct {
+	Message  string `json:"message"`
+	EntityID string `json:"entity_id"`
+	Name     string `json:"name"`
+}
+
+// @Summary		Permanently delete an API key
+// @Description	Minimum role: admin. Deleting the last active admin key is refused (lockout guard).
+// @Tags			API Keys
+// @Produce		json
+// @Param			id	path	int	true	"API key id"
+// @Success		200	{object}	deleteKeyResponse	"Key deleted"
+// @Failure		404	{object}	problem.Body	"No key with that id"
+// @Failure		409	{object}	problem.Body	"Would remove the last active admin key"
+// @Router			/api/api-keys/{id} [delete]
+func (s *Server) handleDeleteKey(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		auth.WriteMsg(w, http.StatusNotFound, "API key not found")
+		return
+	}
+
+	entity, err := s.keys.Delete(id)
+	switch {
+	case errors.Is(err, keys.ErrNotFound):
+		auth.WriteMsg(w, http.StatusNotFound, "API key not found")
+		return
+	case errors.Is(err, keys.ErrLastAdmin):
+		auth.WriteMsg(w, http.StatusConflict,
+			"Cannot delete the last active admin API key - create another admin key first")
+		return
+	case err != nil:
+		slog.Error("key deletion failed", "error", err, "entity_id", idStr)
+		auth.WriteMsg(w, http.StatusInternalServerError, "Failed to delete API key")
+		return
+	}
+	slog.Info("api key deleted", "name", entity.Name,
+		"deleted_by", auth.FromContext(r.Context()).Name)
+
+	writeJSON(w, deleteKeyResponse{
+		Message:  "API key deleted successfully",
+		EntityID: idStr,
+		Name:     entity.Name,
+	})
+}
+
+type revokeKeyResponse struct {
+	Message  string `json:"message"`
+	EntityID string `json:"entity_id"`
+	Name     string `json:"name"`
+}
+
+// @Summary		Deactivate an API key
+// @Description	Minimum role: admin. Revoking the last active admin key is refused (lockout guard).
+// @Tags			API Keys
+// @Produce		json
+// @Param			id	path	int	true	"API key id"
+// @Success		200	{object}	revokeKeyResponse	"Key deactivated"
+// @Failure		404	{object}	problem.Body	"No key with that id"
+// @Failure		409	{object}	problem.Body	"Would deactivate the last active admin key"
+// @Router			/api/api-keys/{id}/revoke [put]
+func (s *Server) handleRevokeKey(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		auth.WriteMsg(w, http.StatusNotFound, "API key not found")
+		return
+	}
+
+	entity, err := s.keys.Revoke(id)
+	switch {
+	case errors.Is(err, keys.ErrNotFound):
+		auth.WriteMsg(w, http.StatusNotFound, "API key not found")
+		return
+	case errors.Is(err, keys.ErrLastAdmin):
+		auth.WriteMsg(w, http.StatusConflict,
+			"Cannot revoke the last active admin API key - create another admin key first")
+		return
+	case err != nil:
+		slog.Error("key revocation failed", "error", err, "entity_id", idStr)
+		auth.WriteMsg(w, http.StatusInternalServerError, "Failed to revoke API key")
+		return
+	}
+	slog.Info("api key revoked", "name", entity.Name,
+		"revoked_by", auth.FromContext(r.Context()).Name)
+
+	writeJSON(w, revokeKeyResponse{
+		Message:  "API key revoked successfully",
+		EntityID: idStr,
+		Name:     entity.Name,
+	})
+}

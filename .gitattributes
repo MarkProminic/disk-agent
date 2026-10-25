@@ -1,0 +1,15 @@
+* text=auto
+
+*.go    text eol=lf
+go.mod  text eol=lf
+go.sum  text eol=lf
+
+*.sh    text eol=lf
+packaging/DEBIAN/postinst  text eol=lf
+packaging/DEBIAN/prerm     text eol=lf
+packaging/DEBIAN/postrm    text eol=lf
+packaging/omnios/startup.sh text eol=lf
+packaging/omnios/build.sh   text eol=lf
+
+*.png   binary
+*.ico   binary

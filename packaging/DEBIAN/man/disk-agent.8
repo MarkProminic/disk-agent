@@ -1,0 +1,121 @@
+.Dd $Mdocdate$
+.Dt DISK-AGENT 8
+.Os
+.Sh NAME
+.Nm disk-agent
+.Nd SMART and ZFS pool state for Home Assistant
+.Sh SYNOPSIS
+.Nm
+.Op Fl -config Ar dir
+.Op Fl -version
+.Sh DESCRIPTION
+The
+.Nm
+utility serves the SMART state of every disk and the state of every ZFS
+pool of its host as JSON over HTTP for the ha_disk_monitor Home Assistant
+integration to poll. It is a single Go binary intended to run under systemd
+on Debian and under SMF on OmniOS.
+.Sh OPTIONS
+.Bl -tag -width ".Fl -config Ar dir"
+.It Fl -config Ar dir
+Read the configuration files from the directory
+.Ar dir
+instead of
+.Ev CONFIG_DIR
+or the per-user default location.
+.It Fl -version
+Print the application version and exit.
+.El
+.Sh CONFIGURATION
+The configuration is a directory of two files:
+.Pa app.config.yaml
+and
+.Pa auth.config.yaml .
+The packaged service uses
+.Pa /etc/disk-agent/ ,
+where the package seeds them.
+.Pp
+See
+.Xr disk-agent.yaml 5
+for the configuration file format.
+.Sh SERVICE MANAGEMENT
+On Debian the service is managed through systemd:
+.Pp
+.Dl # systemctl enable --now disk-agent
+.Dl # systemctl disable disk-agent
+.Dl # systemctl restart disk-agent
+.Dl # systemctl status disk-agent
+.Pp
+On OmniOS the service is managed through SMF:
+.Pp
+.Dl # svcadm enable system/monitoring/disk-agent
+.Dl # svcadm disable system/monitoring/disk-agent
+.Dl # svcs -l system/monitoring/disk-agent
+.Sh API ENDPOINTS
+The public identity and capability probe:
+.Pp
+.Dl http://0.0.0.0:9430/api/status
+.Pp
+Behind an API key, the report the Home Assistant integration polls:
+.Pp
+.Dl GET /api/report
+.Dl GET /api/disks
+.Dl GET /api/pools
+.Pp
+Each request runs smartctl over every device and zpool over every pool;
+concurrent requests share one run.
+.Pp
+With
+.Cm ssl.enabled
+the same surface is served over HTTPS on
+.Cm server.https_port
+(default 9431). Every route lives under
+.Pa /api .
+.Sh FILES
+.Bl -tag -width ".Pa /etc/disk-agent/<name>.config.yaml"
+.It Pa /usr/bin/disk-agent
+The agent binary on Debian
+.It Pa /opt/disk-agent/disk-agent
+The agent binary on OmniOS
+.It Pa /etc/disk-agent/<name>.config.yaml
+Configuration files (app, auth)
+.It Pa /usr/share/disk-agent/config/<name>.config.yaml
+The seed files the Debian package installs and postinst copies into place
+.It Pa /var/log/disk-agent/
+Service log directory
+.It Pa /var/lib/disk-agent/
+Service data directory
+.It Pa /etc/systemd/system/disk-agent.service
+Systemd service unit
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Run in the foreground for testing:
+.Bd -literal -offset indent
+$ disk-agent --config /etc/disk-agent
+.Ed
+.Pp
+Check the agent is up:
+.Bd -literal -offset indent
+$ curl http://127.0.0.1:9430/api/status
+.Ed
+.Sh DIAGNOSTICS
+The agent logs to a rotating text log file (see
+.Xr disk-agent.yaml 5 )
+and, when a console is attached, to standard error. Under systemd, console
+output is captured by the journal:
+.Pp
+.Dl # journalctl -u disk-agent
+.Sh SEE ALSO
+.Xr disk-agent.yaml 5 ,
+.Xr systemctl 1 ,
+.Xr journalctl 1 ,
+.Xr svcadm 8
+.Sh AUTHORS
+.An Makr91
+.Sh SECURITY
+Every route under
+.Pa /api
+other than the public status and health probes requires an API key. Keep the
+configuration directory's filesystem permissions restrictive.

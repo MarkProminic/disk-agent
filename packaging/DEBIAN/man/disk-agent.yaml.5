@@ -1,0 +1,177 @@
+.Dd $Mdocdate$
+.Dt DISK-AGENT.YAML 5
+.Os
+.Sh NAME
+.Nm disk-agent.yaml
+.Nd configuration files for the Disk Agent
+.Sh DESCRIPTION
+The configuration of
+.Xr disk-agent 8
+is a directory of two YAML files:
+.Pa app.config.yaml
+and
+.Pa auth.config.yaml .
+Each carries
+.Cm schemaVersion
+and the sections listed below that belong to it; a key absent from a file
+takes the default its schema declares.
+.Pp
+Location:
+.Pa /etc/disk-agent/
+(seeded by the package, passed via
+.Fl -config
+or
+.Ev CONFIG_DIR ) .
+.Sh CONFIGURATION SECTIONS
+.Ss server
+HTTP/HTTPS server configuration.
+.Bl -tag -width "bind_address"
+.It Cm bind_address
+IP address to bind the web server to (default: "0.0.0.0")
+.It Cm port
+TCP port number for the HTTP server (default: 9430)
+.It Cm https_port
+TCP port number for the HTTPS listener, bound only when
+.Cm ssl.enabled
+(default: 9431)
+.El
+.Ss ssl
+HTTPS/TLS configuration. Certificate problems never stop the agent; HTTPS
+is skipped with an error in the log and HTTP keeps serving.
+.Bl -tag -width "generate_ssl"
+.It Cm enabled
+Boolean serving HTTPS on
+.Cm server.https_port
+(default: true). With SSL up, the plain-HTTP port serves only redirects to
+HTTPS unless
+.Cm force_secure
+is false.
+.It Cm force_secure
+Boolean making the plain-HTTP port serve only 308 redirects to HTTPS while
+the TLS listener is up (default: true).
+.It Cm generate_ssl
+Boolean generating the server certificate at the paths below when none
+exists, signed by the CA at the CA paths, the CA itself generated when
+absent (default: true)
+.It Cm key_path
+Server TLS private key location. Empty uses
+.Pa ssl/server.key
+beside the configuration files (default: empty).
+.It Cm cert_path
+Server TLS certificate location. Empty uses
+.Pa ssl/server.crt
+beside the configuration files (default: empty).
+.It Cm ca_cert_path
+CA certificate that signs the generated server certificate. Empty uses
+.Pa <config dir>/ssl/ca.crt .
+.It Cm ca_key_path
+CA private key location (PKCS#1, PKCS#8, or EC). Empty uses
+.Pa <config dir>/ssl/ca.key .
+.El
+.Ss cors
+Cross-Origin Resource Sharing. The API key, not the browser Origin, is the
+access boundary.
+.Bl -tag -width "allow_all"
+.It Cm allow_all
+Boolean answering any browser Origin (default: true)
+.It Cm whitelist
+List of origins (scheme://host:port) allowed when
+.Cm allow_all
+is false (default: empty)
+.El
+.Ss logging
+Logging configuration.
+.Bl -tag -width "max_size_mb"
+.It Cm level
+Logging level: "error", "warn", "info", or "debug" (default: "info")
+.It Cm console
+Boolean enabling human-readable logging on standard error (default: true)
+.It Cm file
+Log file path. Empty uses
+.Pa logs/agent.log
+beside the configuration files (default: empty).
+.It Cm max_size_mb
+Maximum log file size in megabytes before rotation (default: 20)
+.It Cm max_backups
+Number of rotated log files to keep (default: 5)
+.It Cm compression
+Boolean gzip-compressing rotated log files (default: true)
+.It Cm categories
+Map of per-category log levels overriding the global level. Categories the
+agent emits: app, api_requests, auth (default: empty)
+.El
+.Ss collection
+The tools the collector runs on every GET /api/report.
+.Bl -tag -width "privilege_command"
+.It Cm smartctl_path
+The smartctl binary; a bare name is looked up on PATH (default: "smartctl";
+the Debian package seeds /usr/sbin/smartctl, the OmniOS package
+/opt/ooce/sbin/smartctl)
+.It Cm zpool_path
+The zpool binary (default: "zpool"; the Debian package seeds /sbin/zpool,
+the OmniOS package /usr/sbin/zpool)
+.It Cm privilege_command
+Prepended to every smartctl and zpool call: sudo on Debian, pfexec on
+OmniOS; empty runs them as the service user (default: empty; each package
+seeds its own)
+.El
+.Ss api_keys
+API-key authentication.
+.Bl -tag -width "bootstrap_require_claim_token"
+.It Cm bootstrap_enabled
+Boolean enabling POST /api/api-keys/bootstrap to create the first API key
+(default: true)
+.It Cm bootstrap_auto_disable
+Boolean locking the bootstrap endpoint once any key exists (default: true)
+.It Cm bootstrap_require_claim_token
+Boolean requiring the setup (claim) token, written to
+.Pa setup.token
+beside the configuration files and printed to the startup log, as proof of
+host ownership (default: true)
+.It Cm hash_rounds
+Bcrypt cost for stored key hashes, 4-20 (default: 12)
+.It Cm key_length
+Random bytes of key material, 16-256, base64url-encoded after the da_
+prefix (default: 64)
+.El
+.Sh FILES
+.Bl -tag -width ".Pa /etc/disk-agent/<name>.config.yaml"
+.It Pa /etc/disk-agent/<name>.config.yaml
+Configuration files (app, auth)
+.It Pa /usr/share/disk-agent/config/<name>.config.yaml
+The seed files the Debian package installs and postinst copies into place
+.It Pa /var/log/disk-agent/
+Service log directory
+.It Pa /var/lib/disk-agent/
+Service data directory
+.El
+.Pp
+Beside the configuration files the agent also keeps
+.Pa setup.token
+(first-key claim token, 0600),
+.Pa keys.json
+(hashed API keys, 0600), and
+.Pa backups/
+(configuration backups).
+.Sh EXAMPLES
+The packaged default: two files under
+.Pa /etc/disk-agent ,
+each containing only:
+.Bd -literal -offset indent
+schemaVersion: 1
+.Ed
+.Pp
+Every key absent from a file takes the default its schema declares.
+.Sh DIAGNOSTICS
+Configuration errors prevent the agent from starting and are reported on
+standard error and in the journal:
+.Pp
+.Dl # journalctl -u disk-agent
+.Sh SEE ALSO
+.Xr disk-agent 8 ,
+.Xr systemctl 1 ,
+.Xr journalctl 1
+.Sh STANDARDS
+The configuration files use YAML 1.2 format as defined by the YAML
+specification; each file's schema is JSON Schema 2020-12, served at
+GET /api/config/<name>/schema.

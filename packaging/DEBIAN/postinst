@@ -1,0 +1,44 @@
+#!/bin/bash
+set -e
+
+if ! getent passwd disk-agent > /dev/null 2>&1; then
+    adduser --system --group --home /var/lib/disk-agent \
+            --no-create-home --shell /usr/sbin/nologin \
+            --gecos "Disk Agent system user" disk-agent
+fi
+
+mkdir -p /var/lib/disk-agent
+mkdir -p /var/log/disk-agent
+
+chown -R disk-agent:disk-agent /var/lib/disk-agent
+chown -R disk-agent:disk-agent /var/log/disk-agent
+chown disk-agent:disk-agent /etc/disk-agent
+chmod 750 /etc/disk-agent
+
+for name in app auth; do
+    if [ ! -f "/etc/disk-agent/${name}.config.yaml" ]; then
+        cp "/usr/share/disk-agent/config/${name}.config.yaml" "/etc/disk-agent/${name}.config.yaml"
+        chown disk-agent:disk-agent "/etc/disk-agent/${name}.config.yaml"
+        chmod 600 "/etc/disk-agent/${name}.config.yaml"
+    fi
+done
+if [ ! -f /etc/disk-agent/setup.token ]; then
+    : > /etc/disk-agent/setup.token
+    chown disk-agent:disk-agent /etc/disk-agent/setup.token
+    chmod 600 /etc/disk-agent/setup.token
+fi
+
+systemctl daemon-reload || true
+
+echo ""
+echo "======================================================================"
+echo "Disk Agent has been installed successfully!"
+echo ""
+echo "1. Start the service: systemctl enable --now disk-agent"
+echo "2. Read the setup token: cat /etc/disk-agent/setup.token"
+echo "3. Check status: systemctl status disk-agent"
+echo "4. View logs: journalctl -u disk-agent -f"
+echo "======================================================================"
+echo ""
+
+#DEBHELPER#

@@ -1,0 +1,5 @@
+schemaVersion: 1
+collection:
+  smartctl_path: /opt/ooce/sbin/smartctl
+  zpool_path: /usr/sbin/zpool
+  privilege_command: pfexec
