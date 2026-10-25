@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/Makr91/disk-agent/internal/hostinfo"
-	"github.com/Makr91/disk-agent/internal/version"
+	"github.com/MarkProminic/disk-agent/internal/hostinfo"
+	"github.com/MarkProminic/disk-agent/internal/version"
 )
 
 type versionResponse struct {

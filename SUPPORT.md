@@ -15,7 +15,7 @@ Start with the available documentation:
 
 For bugs and technical issues:
 
-- **[GitHub Issues](https://github.com/Makr91/disk-agent/issues)** - Report bugs or request features
+- **[GitHub Issues](https://github.com/MarkProminic/disk-agent/issues)** - Report bugs or request features
 - Use the appropriate issue template (bug report, feature request, question)
 - Search existing issues first to avoid duplicates
 
@@ -23,8 +23,8 @@ For bugs and technical issues:
 
 For general questions and discussions:
 
-- **[GitHub Discussions](https://github.com/Makr91/disk-agent/discussions)** - Ask questions, share ideas
-- **[GitHub Issues](https://github.com/Makr91/disk-agent/issues)** - Use the "question" template for specific inquiries
+- **[GitHub Discussions](https://github.com/MarkProminic/disk-agent/discussions)** - Ask questions, share ideas
+- **[GitHub Issues](https://github.com/MarkProminic/disk-agent/issues)** - Use the "question" template for specific inquiries
 
 ## Support Expectations
 

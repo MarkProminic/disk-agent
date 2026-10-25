@@ -16,7 +16,7 @@ The service runs as the `disk-agent` system user with `--config /etc/disk-agent`
 
 ```bash
 export VERSION=0.1.0 ARCH=amd64 PKG=disk-agent
-CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X github.com/Makr91/disk-agent/internal/version.Version=${VERSION}" -o bin/disk-agent .
+CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X github.com/MarkProminic/disk-agent/internal/version.Version=${VERSION}" -o bin/disk-agent .
 
 STAGE="${PKG}_${VERSION}_${ARCH}"
 mkdir -p "$STAGE"/usr/bin \
@@ -47,7 +47,7 @@ Description: Disk Agent - SMART and ZFS pool state for Home Assistant
  Single-binary host agent that serves the SMART state of every disk
  and the state of every ZFS pool as JSON over HTTP for the
  ha_disk_monitor Home Assistant integration to poll.
-Homepage: https://github.com/Makr91/disk-agent
+Homepage: https://github.com/MarkProminic/disk-agent
 EOF
 
 find "$STAGE" -type d -exec chmod 755 {} \;

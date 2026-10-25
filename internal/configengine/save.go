@@ -12,9 +12,9 @@ import (
 
 	"github.com/goccy/go-yaml"
 
-	"github.com/Makr91/disk-agent/internal/problem"
-	"github.com/Makr91/disk-agent/internal/safepath"
-	"github.com/Makr91/disk-agent/internal/validation"
+	"github.com/MarkProminic/disk-agent/internal/problem"
+	"github.com/MarkProminic/disk-agent/internal/safepath"
+	"github.com/MarkProminic/disk-agent/internal/validation"
 )
 
 type prepared struct {

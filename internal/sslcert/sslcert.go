@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Makr91/disk-agent/internal/safepath"
+	"github.com/MarkProminic/disk-agent/internal/safepath"
 )
 
 const (

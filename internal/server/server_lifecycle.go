@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Makr91/disk-agent/internal/sslcert"
+	"github.com/MarkProminic/disk-agent/internal/sslcert"
 )
 
 // Listen binds the configured address without serving yet. The HTTPS

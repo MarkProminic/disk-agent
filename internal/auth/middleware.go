@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Makr91/disk-agent/internal/keys"
-	"github.com/Makr91/disk-agent/internal/logging"
-	"github.com/Makr91/disk-agent/internal/problem"
+	"github.com/MarkProminic/disk-agent/internal/keys"
+	"github.com/MarkProminic/disk-agent/internal/logging"
+	"github.com/MarkProminic/disk-agent/internal/problem"
 )
 
 // alog is this package's category logger; logging.categories.auth overrides

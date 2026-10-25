@@ -3,9 +3,9 @@ package server
 import (
 	"net/http"
 
-	"github.com/Makr91/disk-agent/internal/auth"
-	"github.com/Makr91/disk-agent/internal/configengine"
-	"github.com/Makr91/disk-agent/internal/problem"
+	"github.com/MarkProminic/disk-agent/internal/auth"
+	"github.com/MarkProminic/disk-agent/internal/configengine"
+	"github.com/MarkProminic/disk-agent/internal/problem"
 )
 
 func handleUnknownAPI(w http.ResponseWriter, _ *http.Request) {

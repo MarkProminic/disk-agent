@@ -43,7 +43,7 @@ mkdir -p "$DESTDIR"
 build_app() {
     logmsg "Building Disk Agent"
     export CGO_ENABLED=0
-    logcmd go build -trimpath -ldflags "-s -w -X github.com/Makr91/disk-agent/internal/version.Version=${VER}" -o "${PROG}" .
+    logcmd go build -trimpath -ldflags "-s -w -X github.com/MarkProminic/disk-agent/internal/version.Version=${VER}" -o "${PROG}" .
 }
 
 install_app() {

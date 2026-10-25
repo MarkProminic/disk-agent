@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/Makr91/disk-agent/internal/configengine"
-	"github.com/Makr91/disk-agent/internal/safepath"
+	"github.com/MarkProminic/disk-agent/internal/configengine"
+	"github.com/MarkProminic/disk-agent/internal/safepath"
 )
 
 // Config is the typed view over the two configuration files.

@@ -12,7 +12,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 
-	"github.com/Makr91/disk-agent/internal/safepath"
+	"github.com/MarkProminic/disk-agent/internal/safepath"
 )
 
 // Backup describes one timestamped copy of the configuration files.

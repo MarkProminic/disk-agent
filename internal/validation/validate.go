@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/Makr91/disk-agent/internal/problem"
+	"github.com/MarkProminic/disk-agent/internal/problem"
 )
 
 func refTarget(ref string, document Schema) (target Schema, name string) {

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Makr91/disk-agent/internal/config"
-	"github.com/Makr91/disk-agent/internal/logging"
+	"github.com/MarkProminic/disk-agent/internal/config"
+	"github.com/MarkProminic/disk-agent/internal/logging"
 )
 
 // corsMiddleware gates on the API key, not the browser Origin: allow_all

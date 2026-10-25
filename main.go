@@ -6,11 +6,11 @@
 //	@version		1.0.0
 //	@description	Disk Agent API v1. Capabilities are advertised by the public GET /api/status. Authorization is role-based (admin > operator > viewer) and enforced by a central method+path policy; each operation notes its minimum role.
 //	@license.name	GPL-3.0
-//	@license.url	https://github.com/Makr91/disk-agent/blob/main/LICENSE.md
+//	@license.url	https://github.com/MarkProminic/disk-agent/blob/main/LICENSE.md
 //	@contact.name	Disk Agent
-//	@contact.url	https://github.com/Makr91/disk-agent
+//	@contact.url	https://github.com/MarkProminic/disk-agent
 //	@externalDocs.description	View on GitHub
-//	@externalDocs.url	https://github.com/Makr91/disk-agent
+//	@externalDocs.url	https://github.com/MarkProminic/disk-agent
 //	@tag.name		Status
 //	@tag.description	Public identity and capability discovery
 //	@tag.name		API Keys
@@ -35,12 +35,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Makr91/disk-agent/internal/auth"
-	"github.com/Makr91/disk-agent/internal/config"
-	"github.com/Makr91/disk-agent/internal/keys"
-	"github.com/Makr91/disk-agent/internal/logging"
-	"github.com/Makr91/disk-agent/internal/server"
-	"github.com/Makr91/disk-agent/internal/version"
+	"github.com/MarkProminic/disk-agent/internal/auth"
+	"github.com/MarkProminic/disk-agent/internal/config"
+	"github.com/MarkProminic/disk-agent/internal/keys"
+	"github.com/MarkProminic/disk-agent/internal/logging"
+	"github.com/MarkProminic/disk-agent/internal/server"
+	"github.com/MarkProminic/disk-agent/internal/version"
 )
 
 // main stays defer-free so os.Exit cannot skip cleanup; all work and all

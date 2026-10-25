@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Makr91/disk-agent/internal/collector"
-	"github.com/Makr91/disk-agent/internal/config"
-	"github.com/Makr91/disk-agent/internal/disks"
-	"github.com/Makr91/disk-agent/internal/keys"
-	"github.com/Makr91/disk-agent/internal/pools"
+	"github.com/MarkProminic/disk-agent/internal/collector"
+	"github.com/MarkProminic/disk-agent/internal/config"
+	"github.com/MarkProminic/disk-agent/internal/disks"
+	"github.com/MarkProminic/disk-agent/internal/keys"
+	"github.com/MarkProminic/disk-agent/internal/pools"
 )
 
 // Server is the agent's HTTP (and optional HTTPS) server.

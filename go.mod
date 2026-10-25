@@ -1,4 +1,4 @@
-module github.com/Makr91/disk-agent
+module github.com/MarkProminic/disk-agent
 
 go 1.26.0
 

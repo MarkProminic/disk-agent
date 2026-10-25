@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Makr91/disk-agent/internal/validation"
+	"github.com/MarkProminic/disk-agent/internal/validation"
 )
 
 func escape(segment string) string {

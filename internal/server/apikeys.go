@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Makr91/disk-agent/internal/auth"
-	"github.com/Makr91/disk-agent/internal/keys"
-	"github.com/Makr91/disk-agent/internal/problem"
+	"github.com/MarkProminic/disk-agent/internal/auth"
+	"github.com/MarkProminic/disk-agent/internal/keys"
+	"github.com/MarkProminic/disk-agent/internal/problem"
 )
 
 func writeJSON(w http.ResponseWriter, payload any) {

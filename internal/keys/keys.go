@@ -17,7 +17,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Makr91/disk-agent/internal/safepath"
+	"github.com/MarkProminic/disk-agent/internal/safepath"
 )
 
 // ValidRoles is the role vocabulary.

@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Makr91/disk-agent/internal/safepath"
+	"github.com/MarkProminic/disk-agent/internal/safepath"
 )
 
 //go:embed schema/*.schema.yaml

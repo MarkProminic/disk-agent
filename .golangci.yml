@@ -57,4 +57,4 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/Makr91/disk-agent
+        - github.com/MarkProminic/disk-agent

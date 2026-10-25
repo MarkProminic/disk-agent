@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Makr91/disk-agent/internal/problem"
+	"github.com/MarkProminic/disk-agent/internal/problem"
 )
 
 // Schema is one JSON Schema node as parsed from YAML or JSON.

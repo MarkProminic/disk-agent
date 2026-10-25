@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Makr91/disk-agent/internal/hostinfo"
+	"github.com/MarkProminic/disk-agent/internal/hostinfo"
 )
 
 const healthOK = "ok"

@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Makr91/disk-agent/internal/collector"
-	"github.com/Makr91/disk-agent/internal/disks"
-	"github.com/Makr91/disk-agent/internal/pools"
+	"github.com/MarkProminic/disk-agent/internal/collector"
+	"github.com/MarkProminic/disk-agent/internal/disks"
+	"github.com/MarkProminic/disk-agent/internal/pools"
 )
 
 type reportResponse struct {

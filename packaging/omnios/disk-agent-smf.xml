@@ -45,7 +45,7 @@
       <documentation>
         <manpage title='disk-agent' section='8' />
         <doc_link name='Disk Agent Project'
-                  uri='https://github.com/Makr91/disk-agent' />
+                  uri='https://github.com/MarkProminic/disk-agent' />
       </documentation>
     </template>
   </service>

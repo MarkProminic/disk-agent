@@ -118,5 +118,5 @@ rm -rf /var/log/disk-agent
 
 ## Support
 
-- **GitHub**: https://github.com/Makr91/disk-agent
-- **Issues**: https://github.com/Makr91/disk-agent/issues
+- **GitHub**: https://github.com/MarkProminic/disk-agent
+- **Issues**: https://github.com/MarkProminic/disk-agent/issues

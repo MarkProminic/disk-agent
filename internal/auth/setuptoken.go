@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Makr91/disk-agent/internal/safepath"
+	"github.com/MarkProminic/disk-agent/internal/safepath"
 )
 
 // setup.token holds 32 random bytes as hex, written 0600 beside the config.

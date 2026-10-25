@@ -8,7 +8,7 @@ If you discover a security vulnerability in Disk Agent, please report it respons
 
 ### Preferred Method: Security Advisory
 
-1. Go to the [GitHub Security Advisory page](https://github.com/Makr91/disk-agent/security/advisories)
+1. Go to the [GitHub Security Advisory page](https://github.com/MarkProminic/disk-agent/security/advisories)
 2. Click "Report a vulnerability"
 3. Fill out the advisory form with detailed information
 4. Submit the advisory

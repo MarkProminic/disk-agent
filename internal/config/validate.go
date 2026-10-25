@@ -3,7 +3,7 @@ package config
 import (
 	"net"
 
-	"github.com/Makr91/disk-agent/internal/problem"
+	"github.com/MarkProminic/disk-agent/internal/problem"
 )
 
 func failure(pointer, rule string, params map[string]any) []problem.Error {

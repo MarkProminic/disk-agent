@@ -8,18 +8,18 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/Makr91/disk-agent/internal/config"
-	"github.com/Makr91/disk-agent/internal/version"
+	"github.com/MarkProminic/disk-agent/internal/config"
+	"github.com/MarkProminic/disk-agent/internal/version"
 )
 
 type statusBrand struct {
 	Name string `json:"name" example:"Disk Agent"`
-	Repo string `json:"repo" example:"https://github.com/Makr91/disk-agent"`
+	Repo string `json:"repo" example:"https://github.com/MarkProminic/disk-agent"`
 }
 
 var agentBrand = statusBrand{
 	Name: "Disk Agent",
-	Repo: "https://github.com/Makr91/disk-agent",
+	Repo: "https://github.com/MarkProminic/disk-agent",
 }
 
 type statusPayload struct {

@@ -14,8 +14,8 @@ import (
 
 	"gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/Makr91/disk-agent/internal/config"
-	"github.com/Makr91/disk-agent/internal/safepath"
+	"github.com/MarkProminic/disk-agent/internal/config"
+	"github.com/MarkProminic/disk-agent/internal/safepath"
 )
 
 var (
