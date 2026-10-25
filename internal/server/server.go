@@ -29,7 +29,7 @@ type Server struct {
 }
 
 // New builds the server and its routes.
-func New(cfg *config.Config, keyStore *keys.Store) (*Server, error) {
+func New(cfg *config.Config, keyStore *keys.Store) *Server {
 	s := &Server{
 		cfg:  cfg,
 		keys: keyStore,
@@ -41,9 +41,7 @@ func New(cfg *config.Config, keyStore *keys.Store) (*Server, error) {
 	}
 
 	mux := http.NewServeMux()
-	if err := s.registerRoutes(mux); err != nil {
-		return nil, err
-	}
+	s.registerRoutes(mux)
 	handler := requestLog(recoverer(corsMiddleware(&cfg.CORS, mux)))
 	s.httpSrv = &http.Server{
 		Addr:              cfg.ListenAddr(),
@@ -57,5 +55,5 @@ func New(cfg *config.Config, keyStore *keys.Store) (*Server, error) {
 			ReadHeaderTimeout: 10 * time.Second,
 		}
 	}
-	return s, nil
+	return s
 }

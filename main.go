@@ -95,11 +95,7 @@ func run() error {
 		}
 	}
 
-	srv, err := server.New(cfg, keyStore)
-	if err != nil {
-		slog.Error("server setup failed", "error", err)
-		return err
-	}
+	srv := server.New(cfg, keyStore)
 
 	if lerr := srv.Listen(); lerr != nil {
 		slog.Error("http server bind failed", "error", lerr)

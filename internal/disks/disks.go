@@ -53,7 +53,7 @@ func (r Runner) command(ctx context.Context, args ...string) *exec.Cmd {
 	return exec.CommandContext(ctx, r.Smartctl, args...)
 }
 
-func (r Runner) run(ctx context.Context, args ...string) ([]byte, int, error) {
+func (r Runner) run(ctx context.Context, args ...string) (output []byte, exitCode int, err error) {
 	out, err := r.command(ctx, args...).Output()
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
@@ -118,7 +118,7 @@ type infoDocument struct {
 	AtaSmartAttributes *struct {
 		Table []attribute `json:"table"`
 	} `json:"ata_smart_attributes"`
-	ScsiGrownDefectList  *int64 `json:"scsi_grown_defect_list"`
+	ScsiGrownDefectList *int64 `json:"scsi_grown_defect_list"`
 	ScsiErrorCounterLog *struct {
 		Read  *errorCounter `json:"read"`
 		Write *errorCounter `json:"write"`

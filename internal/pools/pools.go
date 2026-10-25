@@ -13,13 +13,13 @@ import (
 
 // Member is one vdev or leaf of a pool's configuration tree.
 type Member struct {
-	Name   string `json:"name"`
-	Depth  int    `json:"depth"`
-	State  string `json:"state"`
-	Read   int64  `json:"read_errors"`
-	Write  int64  `json:"write_errors"`
-	Cksum  int64  `json:"cksum_errors"`
-	Note   string `json:"note"`
+	Name  string `json:"name"`
+	Depth int    `json:"depth"`
+	State string `json:"state"`
+	Read  int64  `json:"read_errors"`
+	Write int64  `json:"write_errors"`
+	Cksum int64  `json:"cksum_errors"`
+	Note  string `json:"note"`
 }
 
 // Pool is the state of one pool, keyed by name.
@@ -69,13 +69,13 @@ func parseInt(field string) int64 {
 	return value
 }
 
-func (r Runner) list(ctx context.Context) (map[string]*Pool, []string, error) {
+func (r Runner) list(ctx context.Context) (pools map[string]*Pool, order []string, err error) {
 	out, err := r.run(ctx, "list", "-H", "-p", "-o", "name,size,alloc,free,cap,frag,health")
 	if err != nil {
 		return nil, nil, err
 	}
-	pools := map[string]*Pool{}
-	order := []string{}
+	pools = map[string]*Pool{}
+	order = []string{}
 	scanner := bufio.NewScanner(strings.NewReader(string(out)))
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())

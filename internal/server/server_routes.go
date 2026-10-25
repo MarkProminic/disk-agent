@@ -12,7 +12,7 @@ func handleUnknownAPI(w http.ResponseWriter, _ *http.Request) {
 	problem.NotFound(w)
 }
 
-func (s *Server) registerRoutes(mux *http.ServeMux) error {
+func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/", handleUnknownAPI)
 	mux.HandleFunc("GET /api/status", s.handleStatus)
 	mux.HandleFunc("GET /api/health", s.handleHealth)
@@ -40,6 +40,4 @@ func (s *Server) registerRoutes(mux *http.ServeMux) error {
 		},
 		User: "disk-agent",
 	}, s.exit, 1<<20)
-
-	return nil
 }

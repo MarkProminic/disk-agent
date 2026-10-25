@@ -166,9 +166,9 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // manager starts it again.
 func (s *Server) exit() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 	if err := s.Shutdown(ctx); err != nil {
 		slog.Error("server shutdown", "error", err)
 	}
+	cancel()
 	os.Exit(0)
 }
