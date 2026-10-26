@@ -290,25 +290,6 @@ func valueAt(document any, pointer string) any {
 	return node
 }
 
-func propertyAt(schema validation.Schema, pointer string) validation.Schema {
-	property := schema
-	for _, segment := range segmentsOf(pointer) {
-		if property == nil {
-			return nil
-		}
-		if child, ok := propertiesOf(property)[segment].(map[string]any); ok {
-			property = child
-			continue
-		}
-		if isMapSchema(property) {
-			property = property["additionalProperties"].(map[string]any)
-			continue
-		}
-		return nil
-	}
-	return property
-}
-
 type leaf struct {
 	pointer string
 	value   any

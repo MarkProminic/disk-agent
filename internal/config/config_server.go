@@ -40,11 +40,8 @@ type CORSConfig struct {
 	Whitelist []string `yaml:"whitelist" json:"whitelist"`
 }
 
-// APIKeysConfig controls API-key authentication.
+// APIKeysConfig controls how API keys are hashed and sized.
 type APIKeysConfig struct {
-	BootstrapEnabled           bool `yaml:"bootstrap_enabled"             json:"bootstrap_enabled"`
-	BootstrapAutoDisable       bool `yaml:"bootstrap_auto_disable"        json:"bootstrap_auto_disable"`
-	BootstrapRequireClaimToken bool `yaml:"bootstrap_require_claim_token" json:"bootstrap_require_claim_token"`
-	HashRounds                 int  `yaml:"hash_rounds"                   json:"hash_rounds"`
-	KeyLength                  int  `yaml:"key_length"                    json:"key_length"`
+	HashRounds int `yaml:"hash_rounds" json:"hash_rounds"`
+	KeyLength  int `yaml:"key_length"  json:"key_length"`
 }

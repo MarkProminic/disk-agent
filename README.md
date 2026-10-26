@@ -9,7 +9,7 @@ Debian, from the STARTcloud repository:
 ```bash
 sudo apt install disk-agent
 sudo systemctl enable --now disk-agent
-sudo cat /etc/disk-agent/setup.token
+sudo -u disk-agent disk-agent --config /etc/disk-agent key add homeassistant
 ```
 
 OmniOS, from the STARTcloud repository:
@@ -17,18 +17,18 @@ OmniOS, from the STARTcloud repository:
 ```bash
 pfexec pkg install system/monitoring/disk-agent
 pfexec svcadm enable system/monitoring/disk-agent
-pfexec cat /etc/disk-agent/setup.token
+pfexec su diskagent -c "/opt/disk-agent/disk-agent --config /etc/disk-agent key add homeassistant"
 ```
 
-The setup token is the proof of host ownership `POST /api/api-keys/bootstrap` demands for the first API key; the integration asks for it once and keeps the key it receives.
+`key add` prints the API key once; paste it into the integration. `key list` and `key remove ID` manage them.
 
 ## Configuration
 
 The configuration is a directory of two files: `app.config.yaml` and `auth.config.yaml`, read from `/etc/disk-agent` by both packages. `--config <dir>` or `CONFIG_DIR` names another.
 
-Every key takes its default from the file's schema in `internal/config/schema/<name>.schema.yaml`; `GET /api/config/<name>/schema` serves the schema and `PUT /api/config/<name>` writes a merge patch.
+Every key takes its default from the file's schema in `internal/config/schema/<name>.schema.yaml`.
 
-Flags: `--config <dir>`, `--version`.
+Flags: `--config <dir>`, `--version`; subcommands `key add NAME`, `key list`, `key remove ID`.
 
 ## Building from source
 

@@ -1,14 +1,7 @@
 package configengine
 
 import (
-	"crypto/rand"
-	"crypto/subtle"
-	"encoding/hex"
 	"errors"
-	"log/slog"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/goccy/go-yaml"
 
@@ -108,44 +101,6 @@ func (e *Engine) Save(name string, body map[string]any, actor string) ([]Restart
 	return diff, nil
 }
 
-// SaveAll validates every patch before writing any, as PUT /api/setup does.
-func (e *Engine) SaveAll(patches map[string]map[string]any, actor string) error {
-	e.mu.Lock()
-	list := []prepared{}
-	errs := []problem.Error{}
-	for _, name := range e.names {
-		body, present := patches[name]
-		if !present {
-			continue
-		}
-		if body == nil {
-			body = map[string]any{}
-		}
-		p := e.prepare(name, body)
-		for _, failure := range p.errors {
-			failure.Pointer = "/configs/" + name + failure.Pointer
-			errs = append(errs, failure)
-		}
-		list = append(list, p)
-	}
-	if len(errs) > 0 {
-		e.mu.Unlock()
-		return &ValidationError{Errors: errs}
-	}
-	writes := make([]saved, 0, len(list))
-	for _, p := range list {
-		_, write, err := e.commit(p, actor)
-		if err != nil {
-			e.mu.Unlock()
-			return err
-		}
-		writes = append(writes, write)
-	}
-	e.mu.Unlock()
-	e.notifySaved(writes...)
-	return nil
-}
-
 // Restore writes a whole raw document for one file after validating it, the backup-restore path.
 func (e *Engine) Restore(name string, document map[string]any, actor string) error {
 	e.mu.Lock()
@@ -167,121 +122,5 @@ func (e *Engine) Restore(name string, document map[string]any, actor string) err
 		return err
 	}
 	e.notifySaved(write)
-	return nil
-}
-
-// WithDeletions adds null for every map entry the raw file holds and the patch's full section omits.
-func (e *Engine) WithDeletions(name string, body map[string]any) map[string]any {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-	schema := e.schemas[name]
-	raw := e.raw[name]
-	out, _ := clone(body).(map[string]any)
-	for key, value := range out {
-		property, _ := propertiesOf(schema)[key].(map[string]any)
-		section, _ := value.(map[string]any)
-		rawSection, _ := raw[key].(map[string]any)
-		if property == nil || section == nil {
-			continue
-		}
-		out[key] = withMapDeletions(property, rawSection, section)
-	}
-	return out
-}
-
-func withMapDeletions(property validation.Schema, raw, patch map[string]any) map[string]any {
-	if isMapSchema(property) {
-		for key := range raw {
-			if _, present := patch[key]; !present {
-				patch[key] = nil
-			}
-		}
-		return patch
-	}
-	for key, child := range propertiesOf(property) {
-		childProperty, _ := child.(map[string]any)
-		childPatch, _ := patch[key].(map[string]any)
-		childRaw, _ := raw[key].(map[string]any)
-		if childProperty == nil || childPatch == nil {
-			continue
-		}
-		patch[key] = withMapDeletions(childProperty, childRaw, childPatch)
-	}
-	return patch
-}
-
-func (e *Engine) setupComplete() bool {
-	if e.hooks.SetupComplete != nil {
-		return e.hooks.SetupComplete()
-	}
-	_, err := os.Stat(e.setupTokenPath())
-	return err != nil
-}
-
-// SetupComplete reports whether setup is complete.
-func (e *Engine) SetupComplete() bool {
-	return e.setupComplete()
-}
-
-func (e *Engine) fillSetupToken() {
-	path := e.setupTokenPath()
-	raw, err := safepath.ReadFile(path)
-	if err != nil || strings.TrimSpace(string(raw)) != "" {
-		return
-	}
-	token := make([]byte, 32)
-	if _, rerr := rand.Read(token); rerr != nil {
-		slog.Error("generate setup token", "error", rerr)
-		return
-	}
-	if werr := safepath.WriteFile(path, []byte(hex.EncodeToString(token)), 0o600); werr != nil {
-		slog.Error("write setup token", "error", werr, "path", path)
-		return
-	}
-	slog.Info("setup token written", "category", "app", "path", path)
-}
-
-func (e *Engine) tokenMatches(token string) bool {
-	if token == "" || e.setupComplete() {
-		return false
-	}
-	raw, err := safepath.ReadFile(e.setupTokenPath())
-	if err != nil {
-		return false
-	}
-	stored := strings.TrimSpace(string(raw))
-	return stored != "" && len(stored) == len(token) && subtle.ConstantTimeCompare([]byte(stored), []byte(token)) == 1
-}
-
-func (e *Engine) deleteSetupToken() {
-	if err := os.Remove(e.setupTokenPath()); err != nil && !errors.Is(err, os.ErrNotExist) {
-		slog.Error("delete setup token", "error", err)
-	}
-}
-
-func (e *Engine) writeUpload(name, pointer string, content []byte) *problem.Error {
-	writableFailure := &problem.Error{Pointer: pointer, Rule: "writable", Params: map[string]any{"user": e.serviceUser}}
-	value, _ := e.GetAt(name, pointer).(string)
-	if strings.TrimSpace(value) == "" {
-		return writableFailure
-	}
-	root, err := filepath.EvalSymlinks(e.configDir)
-	if err != nil {
-		return writableFailure
-	}
-	target := value
-	if !filepath.IsAbs(target) {
-		target = filepath.Join(root, target)
-	}
-	target = filepath.Clean(target)
-	if target != root && !strings.HasPrefix(target, root+string(filepath.Separator)) {
-		return writableFailure
-	}
-	if merr := os.MkdirAll(filepath.Dir(target), 0o700); merr != nil {
-		return writableFailure
-	}
-	if werr := safepath.WriteFile(target, content, 0o600); werr != nil {
-		return writableFailure
-	}
 	return nil
 }

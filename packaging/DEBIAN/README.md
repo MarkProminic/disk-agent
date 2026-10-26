@@ -5,7 +5,7 @@ Production-ready Debian package build for the Disk Agent, with automated CI/CD v
 ## What the package installs
 
 - `/usr/bin/disk-agent` - the single static binary
-- `/usr/share/disk-agent/config/{app,auth}.config.yaml` - the seed configuration files (from `internal/config/seed/`); `postinst` copies each to `/etc/disk-agent/<name>.config.yaml` when absent and creates `/etc/disk-agent/setup.token`
+- `/usr/share/disk-agent/config/{app,auth}.config.yaml` - the seed configuration files (from `internal/config/seed/`); `postinst` copies each to `/etc/disk-agent/<name>.config.yaml` when absent
 - `/etc/systemd/system/disk-agent.service` - service unit
 - `/etc/sudoers.d/disk-agent` - lets the `disk-agent` user run `smartctl` and `zpool` as root
 - `/usr/share/man/man8/disk-agent.8.gz`, `/usr/share/man/man5/disk-agent.yaml.5.gz` - manual pages
@@ -64,6 +64,14 @@ dpkg-deb --build --root-owner-group "$STAGE" "${STAGE}.deb"
 sudo systemctl enable --now disk-agent
 sudo systemctl status disk-agent
 sudo journalctl -fu disk-agent
+```
+
+## API keys
+
+```bash
+sudo -u disk-agent disk-agent --config /etc/disk-agent key add homeassistant
+sudo -u disk-agent disk-agent --config /etc/disk-agent key list
+sudo -u disk-agent disk-agent --config /etc/disk-agent key remove 1
 ```
 
 ## Uninstall

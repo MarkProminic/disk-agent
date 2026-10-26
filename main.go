@@ -4,7 +4,7 @@
 //
 //	@title			Disk Agent API
 //	@version		1.0.0
-//	@description	Disk Agent API v1. Capabilities are advertised by the public GET /api/status. Authorization is role-based (admin > operator > viewer) and enforced by a central method+path policy; each operation notes its minimum role.
+//	@description	Disk Agent API v1. The public GET /api/status and GET /api/health need no credential; every other route takes an API key as X-API-Key or Authorization: Bearer. Keys are made on the host with disk-agent key add.
 //	@license.name	GPL-3.0
 //	@license.url	https://github.com/MarkProminic/disk-agent/blob/main/LICENSE.md
 //	@contact.name	Disk Agent
@@ -13,35 +13,37 @@
 //	@externalDocs.url	https://github.com/MarkProminic/disk-agent
 //	@tag.name		Status
 //	@tag.description	Public identity and capability discovery
-//	@tag.name		API Keys
-//	@tag.description	API-key lifecycle
 //	@tag.name		System
 //	@tag.description	Version and host information
 //	@tag.name		Report
 //	@tag.description	The SMART state of every disk and the state of every ZFS pool, collected when asked
-//	@tag.name		Configuration
-//	@tag.description	The two configuration files (app, auth) over the config contract's routes: the raw file, its JSON Schema, a merge-patch write refused with 422 and pointers, the pending restart list and the restart. Admin only.
-//	@tag.name		Setup
-//	@tag.description	First-run setup under the setup token in setup.token beside the configuration files.
 package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
-	"github.com/MarkProminic/disk-agent/internal/auth"
 	"github.com/MarkProminic/disk-agent/internal/config"
 	"github.com/MarkProminic/disk-agent/internal/keys"
 	"github.com/MarkProminic/disk-agent/internal/logging"
 	"github.com/MarkProminic/disk-agent/internal/server"
 	"github.com/MarkProminic/disk-agent/internal/version"
 )
+
+const usage = `usage:
+  disk-agent [--config DIR]                  run the agent
+  disk-agent [--config DIR] key add NAME     make an API key and print it once
+  disk-agent [--config DIR] key list         list the API keys
+  disk-agent [--config DIR] key remove ID    delete an API key
+  disk-agent --version                       print the version`
 
 // main stays defer-free so os.Exit cannot skip cleanup; all work and all
 // defers live in run.
@@ -55,6 +57,7 @@ func main() {
 func run() error {
 	configDir := flag.String("config", "", "configuration directory (default: CONFIG_DIR, else the per-user config dir)")
 	showVersion := flag.Bool("version", false, "print version and exit")
+	flag.Usage = func() { fmt.Fprintln(os.Stderr, usage) }
 	flag.Parse()
 
 	if *showVersion {
@@ -66,8 +69,59 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	resolvedPath := cfg.Dir()
 
+	if flag.NArg() > 0 {
+		return runKeyCommand(cfg, flag.Args())
+	}
+	return runAgent(cfg)
+}
+
+func runKeyCommand(cfg *config.Config, args []string) error {
+	if args[0] != "key" || len(args) < 2 {
+		return errors.New(usage)
+	}
+	store, err := keys.Open(cfg.KeyStorePath())
+	if err != nil {
+		return err
+	}
+	switch args[1] {
+	case "add":
+		if len(args) != 3 {
+			return errors.New(usage)
+		}
+		apiKey, err := keys.GenerateKeyString(cfg.APIKeys.KeyLength)
+		if err != nil {
+			return err
+		}
+		if _, err := store.Create(apiKey, args[2], cfg.APIKeys.HashRounds); err != nil {
+			return err
+		}
+		fmt.Fprintln(os.Stdout, apiKey)
+		return nil
+	case "list":
+		for _, k := range store.List() {
+			fmt.Fprintf(os.Stdout, "%d\t%s\tcreated %s\tlast used %s\n", k.ID, k.Name, k.CreatedAt.Format(time.RFC3339), k.LastUsed.Format(time.RFC3339))
+		}
+		return nil
+	case "remove":
+		if len(args) != 3 {
+			return errors.New(usage)
+		}
+		id, err := strconv.ParseInt(args[2], 10, 64)
+		if err != nil {
+			return fmt.Errorf("key id %q is not a number", args[2])
+		}
+		k, err := store.Delete(id)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stdout, "removed %d %s\n", k.ID, k.Name)
+		return nil
+	}
+	return errors.New(usage)
+}
+
+func runAgent(cfg *config.Config) error {
 	closeLog, err := logging.Setup(cfg)
 	if err != nil {
 		return err
@@ -78,25 +132,18 @@ func run() error {
 		}
 	}()
 
-	slog.Info("disk-agent starting",
-		"version", version.Version,
-		"config", resolvedPath,
-	)
+	slog.Info("disk-agent starting", "version", version.Version, "config", cfg.Dir())
 
 	keyStore, err := keys.Open(cfg.KeyStorePath())
 	if err != nil {
 		slog.Error("key store setup failed", "error", err)
 		return err
 	}
-
-	if cfg.APIKeys.BootstrapEnabled && cfg.APIKeys.BootstrapRequireClaimToken && keyStore.Count() == 0 {
-		if token := auth.GetOrGenerateSetupToken(cfg.SetupTokenPath()); token != "" {
-			slog.Info("Setup token (required to create the first API key): " + token)
-		}
+	if len(keyStore.List()) == 0 {
+		slog.Warn("no API keys exist; make one with: disk-agent --config " + cfg.Dir() + " key add NAME")
 	}
 
 	srv := server.New(cfg, keyStore)
-
 	if lerr := srv.Listen(); lerr != nil {
 		slog.Error("http server bind failed", "error", lerr)
 		return lerr

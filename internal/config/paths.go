@@ -49,12 +49,6 @@ func (c *Config) LogFilePath() (string, error) {
 	return filepath.Join(c.dir, "logs", "agent.log"), nil
 }
 
-// SetupTokenPath returns the setup token location: setup.token beside the
-// configuration files.
-func (c *Config) SetupTokenPath() string {
-	return filepath.Join(c.dir, "setup.token")
-}
-
 // KeyStorePath returns the API-key store location: keys.json beside the
 // configuration files.
 func (c *Config) KeyStorePath() string {

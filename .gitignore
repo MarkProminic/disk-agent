@@ -10,7 +10,6 @@ logs/
 
 /config.yaml
 /keys.json
-/setup.token
 
 ssl/
 *.key

@@ -60,6 +60,14 @@ tail -f /var/log/disk-agent/application.log
 
 The service reads the configuration directory `/etc/disk-agent`: `app.config.yaml` and `auth.config.yaml`. Both files are preserved during package updates.
 
+### API keys
+
+```bash
+pfexec su diskagent -c "/opt/disk-agent/disk-agent --config /etc/disk-agent key add homeassistant"
+pfexec su diskagent -c "/opt/disk-agent/disk-agent --config /etc/disk-agent key list"
+pfexec su diskagent -c "/opt/disk-agent/disk-agent --config /etc/disk-agent key remove 1"
+```
+
 ### SSL Certificates
 
 SSL certificates are generated during first startup if they do not exist:

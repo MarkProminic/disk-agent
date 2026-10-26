@@ -1,4 +1,4 @@
-// Package configengine loads, validates, serves and writes the configuration files of the config contract: the schema-filled documents, the merge-patch writes, the restart list, the setup token and the routes behind them.
+// Package configengine loads, validates and writes the configuration files: the schema-filled documents, the merge-patch writes and the restart list.
 package configengine
 
 import (
@@ -17,17 +17,14 @@ import (
 	"github.com/MarkProminic/disk-agent/internal/validation"
 )
 
-const setupTokenFile = "setup.token"
-
 // Hook answers the failing rules of one leaf the schema cannot express.
 type Hook func(pointer string, value any, name string, document map[string]any, configDir string) []problem.Error
 
 // Hooks are the backend's own rules and its after-write function.
 type Hooks struct {
-	Writable      Hook
-	Reachable     Hook
-	OnSaved       func(name, actor string, status RestartStatus)
-	SetupComplete func() bool
+	Writable  Hook
+	Reachable Hook
+	OnSaved   func(name, actor string, status RestartStatus)
 }
 
 // RestartEntry is one changed leaf that needs a restart.
@@ -67,10 +64,6 @@ type Engine struct {
 	pending          map[string]RestartEntry
 	lastModifiedBy   *string
 	lastModifiedTime *string
-	serviceUser      string
-	auth             Auth
-	exit             func()
-	uploadLimit      int64
 }
 
 // New builds an engine over configDir for the code-fixed names, reading schemas from schemaFS.
@@ -108,10 +101,6 @@ func (e *Engine) known(name string) bool {
 
 func (e *Engine) filePath(name string) string {
 	return filepath.Join(e.configDir, name+".config.yaml")
-}
-
-func (e *Engine) setupTokenPath() string {
-	return filepath.Join(e.configDir, setupTokenFile)
 }
 
 func (e *Engine) readSchema(name string) (validation.Schema, error) {
@@ -212,7 +201,6 @@ func (e *Engine) Load() error {
 	if !ok {
 		return errors.New("configuration failed to load; every failing pointer is in the log")
 	}
-	e.fillSetupToken()
 	return nil
 }
 

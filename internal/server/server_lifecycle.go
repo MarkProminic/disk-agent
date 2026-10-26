@@ -11,7 +11,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/MarkProminic/disk-agent/internal/sslcert"
 )
@@ -160,15 +159,4 @@ func (s *Server) Shutdown(ctx context.Context) error {
 		}
 	}
 	return err
-}
-
-// exit stops the process after a configuration restart request; the service
-// manager starts it again.
-func (s *Server) exit() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	if err := s.Shutdown(ctx); err != nil {
-		slog.Error("server shutdown", "error", err)
-	}
-	cancel()
-	os.Exit(0)
 }

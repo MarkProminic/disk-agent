@@ -22,11 +22,6 @@ for name in app auth; do
         chmod 600 "/etc/disk-agent/${name}.config.yaml"
     fi
 done
-if [ ! -f /etc/disk-agent/setup.token ]; then
-    : > /etc/disk-agent/setup.token
-    chown disk-agent:disk-agent /etc/disk-agent/setup.token
-    chmod 600 /etc/disk-agent/setup.token
-fi
 
 systemctl daemon-reload || true
 
@@ -35,9 +30,9 @@ echo "======================================================================"
 echo "Disk Agent has been installed successfully!"
 echo ""
 echo "1. Start the service: systemctl enable --now disk-agent"
-echo "2. Read the setup token: cat /etc/disk-agent/setup.token"
-echo "3. Check status: systemctl status disk-agent"
-echo "4. View logs: journalctl -u disk-agent -f"
+echo "2. Make an API key:   sudo -u disk-agent disk-agent --config /etc/disk-agent key add homeassistant"
+echo "3. Check status:      systemctl status disk-agent"
+echo "4. View logs:         journalctl -u disk-agent -f"
 echo "======================================================================"
 echo ""
 

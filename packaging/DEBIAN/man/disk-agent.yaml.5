@@ -116,18 +116,9 @@ OmniOS; empty runs them as the service user (default: empty; each package
 seeds its own)
 .El
 .Ss api_keys
-API-key authentication.
-.Bl -tag -width "bootstrap_require_claim_token"
-.It Cm bootstrap_enabled
-Boolean enabling POST /api/api-keys/bootstrap to create the first API key
-(default: true)
-.It Cm bootstrap_auto_disable
-Boolean locking the bootstrap endpoint once any key exists (default: true)
-.It Cm bootstrap_require_claim_token
-Boolean requiring the setup (claim) token, written to
-.Pa setup.token
-beside the configuration files and printed to the startup log, as proof of
-host ownership (default: true)
+API keys, made on the host with
+.Nm disk-agent Cm key add .
+.Bl -tag -width "hash_rounds"
 .It Cm hash_rounds
 Bcrypt cost for stored key hashes, 4-20 (default: 12)
 .It Cm key_length
@@ -147,12 +138,8 @@ Service data directory
 .El
 .Pp
 Beside the configuration files the agent also keeps
-.Pa setup.token
-(first-key claim token, 0600),
 .Pa keys.json
-(hashed API keys, 0600), and
-.Pa backups/
-(configuration backups).
+(hashed API keys, 0600).
 .Sh EXAMPLES
 The packaged default: two files under
 .Pa /etc/disk-agent ,
@@ -173,5 +160,4 @@ standard error and in the journal:
 .Xr journalctl 1
 .Sh STANDARDS
 The configuration files use YAML 1.2 format as defined by the YAML
-specification; each file's schema is JSON Schema 2020-12, served at
-GET /api/config/<name>/schema.
+specification; each file's schema is JSON Schema 2020-12.

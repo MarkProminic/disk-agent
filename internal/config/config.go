@@ -26,12 +26,6 @@ type Config struct {
 	engine *configengine.Engine
 }
 
-// fileOfSection names the configuration file each top-level section lives in.
-var fileOfSection = map[string]string{
-	"server": "app", "ssl": "app", "cors": "app", "logging": "app", "collection": "app",
-	"api_keys": "auth",
-}
-
 // DefaultDir answers the per-user configuration directory, CONFIG_DIR when set.
 func DefaultDir() (string, error) {
 	if dir := os.Getenv("CONFIG_DIR"); dir != "" {
@@ -46,9 +40,8 @@ func DefaultDir() (string, error) {
 
 // Options shape one load.
 type Options struct {
-	Dir           string
-	Seed          bool
-	SetupComplete func() bool
+	Dir  string
+	Seed bool
 }
 
 // Load builds the engine over the configuration directory, loads every file and fills the typed view.
@@ -72,8 +65,7 @@ func Load(options Options) (*Config, error) {
 	}
 	cfg := &Config{dir: dir}
 	cfg.engine = configengine.New(dir, Names, SchemaFS(), configengine.Hooks{
-		Writable:      cfg.codeRules,
-		SetupComplete: options.SetupComplete,
+		Writable: cfg.codeRules,
 	})
 	if lerr := cfg.engine.Load(); lerr != nil {
 		return nil, lerr

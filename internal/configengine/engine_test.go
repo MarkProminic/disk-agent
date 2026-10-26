@@ -137,30 +137,3 @@ func TestNullRemovesAKey(t *testing.T) {
 		t.Fatalf("default not refilled: %v", got)
 	}
 }
-
-func TestSetupTokenLifecycle(t *testing.T) {
-	e := newTestEngine(t, "schemaVersion: 1\n")
-	if err := os.WriteFile(e.setupTokenPath(), []byte(""), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := e.Load(); err != nil {
-		t.Fatal(err)
-	}
-	raw, _ := os.ReadFile(e.setupTokenPath())
-	if len(raw) != 64 {
-		t.Fatalf("empty token not filled: %q", raw)
-	}
-	if e.SetupComplete() {
-		t.Fatal("setup complete while the token exists")
-	}
-	if !e.tokenMatches(string(raw)) || e.tokenMatches("nope") {
-		t.Fatal("token match wrong")
-	}
-	if err := e.SaveAll(map[string]map[string]any{"app": {"server": map[string]any{"port": int64(9000)}}}, "setup"); err != nil {
-		t.Fatal(err)
-	}
-	e.deleteSetupToken()
-	if !e.SetupComplete() {
-		t.Fatal("setup not complete after the token is deleted")
-	}
-}

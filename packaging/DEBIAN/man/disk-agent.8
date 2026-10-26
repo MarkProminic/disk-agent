@@ -7,7 +7,17 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl -config Ar dir
-.Op Fl -version
+.Nm
+.Op Fl -config Ar dir
+.Cm key add Ar name
+.Nm
+.Op Fl -config Ar dir
+.Cm key list
+.Nm
+.Op Fl -config Ar dir
+.Cm key remove Ar id
+.Nm
+.Fl -version
 .Sh DESCRIPTION
 The
 .Nm
@@ -25,6 +35,16 @@ instead of
 or the per-user default location.
 .It Fl -version
 Print the application version and exit.
+.It Cm key add Ar name
+Make an API key named
+.Ar name ,
+print it once and store its hash in
+.Pa keys.json
+beside the configuration files.
+.It Cm key list
+List the API keys with their ids.
+.It Cm key remove Ar id
+Delete the API key with that id.
 .El
 .Sh CONFIGURATION
 The configuration is a directory of two files:
@@ -117,5 +137,6 @@ output is captured by the journal:
 .Sh SECURITY
 Every route under
 .Pa /api
-other than the public status and health probes requires an API key. Keep the
-configuration directory's filesystem permissions restrictive.
+other than the public status and health probes requires an API key made with
+.Cm key add .
+Keep the configuration directory's filesystem permissions restrictive.
