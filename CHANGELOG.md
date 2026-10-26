@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/MarkProminic/disk-agent/compare/v0.3.1...v0.3.2) (2026-10-26)
+
+
+### Bug Fixes
+
+* re-read keys.json on change and answer mDNS browses on illumos ([646c913](https://github.com/MarkProminic/disk-agent/commit/646c913b6d10ee287f253268bdc4f5c8a5d405b5))
+
 ## [0.3.1](https://github.com/MarkProminic/disk-agent/compare/v0.3.0...v0.3.1) (2026-10-26)
 
 
