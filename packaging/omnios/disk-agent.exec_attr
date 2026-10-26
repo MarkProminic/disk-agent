@@ -1,2 +1,3 @@
 Disk Agent:solaris:cmd:::/opt/ooce/sbin/smartctl:uid=0;privs=all
+Disk Agent:solaris:cmd:::/opt/ooce/smartmontools/sbin/smartctl:uid=0;privs=all
 Disk Agent:solaris:cmd:::/usr/sbin/zpool:uid=0;privs=all
