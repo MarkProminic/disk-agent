@@ -23,7 +23,8 @@ This directory contains the files needed to build an OmniOS IPS package for the 
 
 - `disk-agent-smf.xml` - SMF service manifest (stop method uses SMF's `:kill` token)
 - `startup.sh` - Service startup script
-- `disk-agent.user_attr` - RBAC profile grant for the service user
+- `disk-agent.prof_attr`, `disk-agent.exec_attr` - the Disk Agent RBAC profile: smartctl and zpool as root, nothing else
+- `disk-agent.user_attr` - grants that profile to the service user
 
 ### Configuration
 

@@ -63,9 +63,21 @@ license opt/disk-agent/LICENSE.md license="GPL-3.0" must-accept=false
 <transform file path=etc/disk-agent/.*\.config\.yaml -> set preserve true>
 
 <transform dir path=etc/user_attr.d$ -> drop>
+<transform dir path=etc/security$ -> drop>
+<transform dir path=etc/security/prof_attr.d$ -> drop>
+<transform dir path=etc/security/exec_attr.d$ -> drop>
 <transform file path=etc/user_attr.d/disk-agent -> set owner root>
 <transform file path=etc/user_attr.d/disk-agent -> set group sys>
 <transform file path=etc/user_attr.d/disk-agent -> set mode 0644>
+<transform file path=etc/user_attr.d/disk-agent -> set restart_fmri svc:/system/rbac:default>
+<transform file path=etc/security/prof_attr.d/disk-agent -> set owner root>
+<transform file path=etc/security/prof_attr.d/disk-agent -> set group sys>
+<transform file path=etc/security/prof_attr.d/disk-agent -> set mode 0644>
+<transform file path=etc/security/prof_attr.d/disk-agent -> set restart_fmri svc:/system/rbac:default>
+<transform file path=etc/security/exec_attr.d/disk-agent -> set owner root>
+<transform file path=etc/security/exec_attr.d/disk-agent -> set group sys>
+<transform file path=etc/security/exec_attr.d/disk-agent -> set mode 0644>
+<transform file path=etc/security/exec_attr.d/disk-agent -> set restart_fmri svc:/system/rbac:default>
 
 <transform dir path=etc/disk-agent/ssl -> set owner diskagent>
 <transform dir path=etc/disk-agent/ssl -> set group diskagent>

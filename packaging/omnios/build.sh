@@ -66,9 +66,11 @@ install_app() {
     logcmd cp $SRCDIR/packaging/omnios/app.config.yaml etc/disk-agent/app.config.yaml
     logcmd cp $SRCDIR/internal/config/seed/auth.config.yaml etc/disk-agent/auth.config.yaml
 
-    logmsg "Installing user_attr fragment for diskagent RBAC profile"
-    logcmd mkdir -p etc/user_attr.d
+    logmsg "Installing RBAC fragments for the Disk Agent profile"
+    logcmd mkdir -p etc/user_attr.d etc/security/prof_attr.d etc/security/exec_attr.d
     logcmd cp $SRCDIR/packaging/omnios/disk-agent.user_attr etc/user_attr.d/disk-agent
+    logcmd cp $SRCDIR/packaging/omnios/disk-agent.prof_attr etc/security/prof_attr.d/disk-agent
+    logcmd cp $SRCDIR/packaging/omnios/disk-agent.exec_attr etc/security/exec_attr.d/disk-agent
 
     logcmd mkdir -p etc/disk-agent/ssl
     logcmd mkdir -p var/lib/disk-agent

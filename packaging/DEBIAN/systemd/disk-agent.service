@@ -12,7 +12,6 @@ ExecStart=/usr/bin/disk-agent --config /etc/disk-agent
 Restart=always
 RestartSec=3
 
-NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 ConfigurationDirectory=disk-agent
