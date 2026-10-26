@@ -1,5 +1,7 @@
 // Package keys implements the agent's API-key store: bcrypt-hashed keys
-// persisted as a JSON file beside the config.
+// persisted as a JSON file beside the config. The file is shared by the
+// running agent and the key subcommands, so every operation re-reads it when
+// its modification time has moved.
 package keys
 
 import (
@@ -41,6 +43,7 @@ type Store struct {
 	path string
 	data storeFile
 
+	loaded        time.Time
 	lastUsedFlush time.Time
 
 	verified map[[sha256.Size]byte]int64
@@ -64,21 +67,59 @@ func Open(path string) (*Store, error) {
 		data:     storeFile{NextID: 1},
 		verified: map[[sha256.Size]byte]int64{},
 	}
-
-	raw, err := os.ReadFile(filepath.Clean(clean))
-	if errors.Is(err, os.ErrNotExist) {
-		return s, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("read key store %s: %w", clean, err)
-	}
-	if uerr := json.Unmarshal(raw, &s.data); uerr != nil {
-		return nil, fmt.Errorf("parse key store %s: %w", clean, uerr)
-	}
-	if s.data.NextID < 1 {
-		s.data.NextID = 1
+	if lerr := s.load(); lerr != nil {
+		return nil, lerr
 	}
 	return s, nil
+}
+
+// load replaces the in-memory store with the file. Callers must hold s.mu or
+// own the store alone.
+func (s *Store) load() error {
+	info, err := os.Stat(s.path)
+	if errors.Is(err, os.ErrNotExist) {
+		s.data = storeFile{NextID: 1}
+		s.loaded = time.Time{}
+		s.verified = map[[sha256.Size]byte]int64{}
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("stat key store %s: %w", s.path, err)
+	}
+	raw, err := os.ReadFile(filepath.Clean(s.path))
+	if err != nil {
+		return fmt.Errorf("read key store %s: %w", s.path, err)
+	}
+	data := storeFile{NextID: 1}
+	if uerr := json.Unmarshal(raw, &data); uerr != nil {
+		return fmt.Errorf("parse key store %s: %w", s.path, uerr)
+	}
+	if data.NextID < 1 {
+		data.NextID = 1
+	}
+	s.data = data
+	s.loaded = info.ModTime()
+	s.verified = map[[sha256.Size]byte]int64{}
+	return nil
+}
+
+// reloadIfChanged re-reads the file when another process wrote it. Callers
+// must hold s.mu.
+func (s *Store) reloadIfChanged() error {
+	info, err := os.Stat(s.path)
+	if errors.Is(err, os.ErrNotExist) {
+		if s.loaded.IsZero() {
+			return nil
+		}
+		return s.load()
+	}
+	if err != nil {
+		return fmt.Errorf("stat key store %s: %w", s.path, err)
+	}
+	if info.ModTime().Equal(s.loaded) {
+		return nil
+	}
+	return s.load()
 }
 
 // persist writes the store through safepath.WriteFile, 0600. Callers must
@@ -93,6 +134,9 @@ func (s *Store) persist() error {
 	}
 	if err := safepath.WriteFile(s.path, raw, 0o600); err != nil {
 		return err
+	}
+	if info, serr := os.Stat(s.path); serr == nil {
+		s.loaded = info.ModTime()
 	}
 	s.lastUsedFlush = time.Now()
 	return nil
@@ -124,6 +168,9 @@ func (s *Store) Create(apiKey, name string, hashRounds int) (*Key, error) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if rerr := s.reloadIfChanged(); rerr != nil {
+		return nil, rerr
+	}
 
 	now := time.Now()
 	k := &Key{
@@ -144,16 +191,20 @@ func (s *Store) Create(apiKey, name string, hashRounds int) (*Key, error) {
 	return k.clone(), nil
 }
 
-// Verify authenticates apiKey: a constant-time cache lookup for key material
-// that has already proven itself this process lifetime, else a bcrypt
-// comparison against every key. The bcrypt scan runs outside the store
-// mutex. Returns the matching key or nil. lastUsed is bumped in memory on
-// every hit and flushed to disk at most once per interval.
+// Verify authenticates apiKey: the file is re-read when it changed, then a
+// constant-time cache lookup for key material that has already proven itself,
+// else a bcrypt comparison against every key. The bcrypt scan runs outside
+// the store mutex. Returns the matching key or nil. lastUsed is bumped in
+// memory on every hit and flushed to disk at most once per interval.
 func (s *Store) Verify(apiKey string) (*Key, error) {
 	candidate := truncateForBcrypt(apiKey)
 	digest := sha256.Sum256(candidate)
 
 	s.mu.Lock()
+	if rerr := s.reloadIfChanged(); rerr != nil {
+		s.mu.Unlock()
+		return nil, rerr
+	}
 	if id, hit := s.verified[digest]; hit {
 		k := s.find(id)
 		if k != nil {
@@ -203,6 +254,7 @@ func (s *Store) recordUse(k *Key) (*Key, error) {
 func (s *Store) List() []*Key {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	_ = s.reloadIfChanged()
 
 	out := make([]*Key, 0, len(s.data.Keys))
 	for i := len(s.data.Keys) - 1; i >= 0; i-- {
@@ -215,6 +267,9 @@ func (s *Store) List() []*Key {
 func (s *Store) Delete(id int64) (*Key, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if rerr := s.reloadIfChanged(); rerr != nil {
+		return nil, rerr
+	}
 
 	k := s.find(id)
 	if k == nil {
