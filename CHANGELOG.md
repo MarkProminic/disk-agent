@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/MarkProminic/disk-agent/compare/v0.2.0...v0.2.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* replace setup token bootstrap with disk-agent key subcommands ([05bc5d3](https://github.com/MarkProminic/disk-agent/commit/05bc5d3d473dfb03a197b3e992f2ff8c2c374b17))
+
 ## [0.2.0](https://github.com/MarkProminic/disk-agent/compare/v0.1.0...v0.2.0) (2026-10-25)
 
 
