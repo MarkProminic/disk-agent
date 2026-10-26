@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/MarkProminic/disk-agent/compare/v0.2.2...v0.3.0) (2026-10-26)
+
+
+### Features
+
+* refresh the report from host events and push it over a stream ([555feb2](https://github.com/MarkProminic/disk-agent/commit/555feb26c6790ee36e158cd55b8efcc4b7dd74b6))
+
 ## [0.2.2](https://github.com/MarkProminic/disk-agent/compare/v0.2.1...v0.2.2) (2026-10-26)
 
 
