@@ -19,9 +19,9 @@ set name=info.upstream-url value="https://github.com/MarkProminic/disk-agent"
 depend fmri=ooce/system/smartmontools type=require
 depend fmri=web/curl type=require
 
-user username=diskagent uid=302 group=diskagent gcos-field="Disk Agent Service User" \
+user username=diskagent uid=303 group=diskagent gcos-field="Disk Agent Service User" \
     home-dir=/var/lib/disk-agent login-shell=/usr/bin/bash
-group groupname=diskagent gid=302
+group groupname=diskagent gid=303
 
 license opt/disk-agent/LICENSE.md license="GPL-3.0" must-accept=false
 

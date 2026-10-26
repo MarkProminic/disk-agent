@@ -6,7 +6,7 @@ This directory contains the files needed to build an OmniOS IPS package for the 
 
 - **Package Name**: `system/monitoring/disk-agent`
 - **Service Name**: `system/monitoring/disk-agent`
-- **User/Group**: `diskagent` (UID/GID: 302)
+- **User/Group**: `diskagent` (UID/GID: 303)
 - **Installation Path**: `/opt/disk-agent`
 - **Configuration**: `/etc/disk-agent`
 - **Data Directory**: `/var/lib/disk-agent` (also user home directory)
@@ -27,7 +27,7 @@ This directory contains the files needed to build an OmniOS IPS package for the 
 - `trigger.sh` - POSTs a trigger to the agent's unix socket `/etc/disk-agent/trigger.sock`
 - `disk-agent.sysevent.conf` - installed as `/etc/sysevent/config/DiskAgent,sysevent.conf`; syseventd runs `trigger.sh` on every EC_zfs, EC_dev_add and EC_dev_remove event
 - `smartd_warning.d-disk-agent` - installed into `/etc/opt/ooce/smartmontools/smartd_warning.d/`; smartd runs it on every warning
-- `disk-agent.prof_attr`, `disk-agent.exec_attr` - the Disk Agent RBAC profile: smartctl and zpool as root, nothing else
+- `disk-agent.prof_attr`, `disk-agent.exec_attr` - the Disk Agent RBAC profile: smartctl and zpool as root with full privileges, nothing else; a pfexec'd command is privilege-aware, so uid alone leaves it with the basic set
 - `disk-agent.user_attr` - grants that profile to the service user
 
 ### Configuration

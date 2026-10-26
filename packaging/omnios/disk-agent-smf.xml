@@ -20,7 +20,7 @@
     <exec_method name='start' type='method' exec='/opt/disk-agent/startup.sh' timeout_seconds='60'>
       <method_context working_directory='/opt/disk-agent'>
         <method_credential user='diskagent' group='diskagent'
-            privileges='basic,net_privaddr,file_dac_read' />
+            privileges='basic,net_privaddr,file_dac_read' limit_privileges='all' />
         <method_environment>
           <envvar name='PATH' value='/opt/ooce/bin:/opt/ooce/sbin:/usr/bin:/usr/sbin:/sbin'/>
           <envvar name='CONFIG_DIR' value='/etc/disk-agent'/>
