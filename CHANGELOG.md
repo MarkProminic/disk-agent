@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/MarkProminic/disk-agent/compare/v0.3.0...v0.3.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* give the OmniOS service user a working RBAC profile ([6f4ab0c](https://github.com/MarkProminic/disk-agent/commit/6f4ab0c6d895a11400126000f9eba304983bac2f))
+
 ## [0.3.0](https://github.com/MarkProminic/disk-agent/compare/v0.2.2...v0.3.0) (2026-10-26)
 
 
