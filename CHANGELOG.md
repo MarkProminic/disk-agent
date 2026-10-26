@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/MarkProminic/disk-agent/compare/v0.2.1...v0.2.2) (2026-10-26)
+
+
+### Bug Fixes
+
+* let the service user run smartctl and zpool under both packagings ([db4e1aa](https://github.com/MarkProminic/disk-agent/commit/db4e1aa3fdbed952890ef61f16d4c44b77fdd386))
+
 ## [0.2.1](https://github.com/MarkProminic/disk-agent/compare/v0.2.0...v0.2.1) (2026-10-26)
 
 
