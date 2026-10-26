@@ -1,0 +1,41 @@
+<?xml version='1.0'?>
+<!DOCTYPE service_bundle SYSTEM '/usr/share/lib/xml/dtd/service_bundle.dtd.1'>
+<service_bundle type='manifest' name='disk-agent-setup'>
+  <service name='system/monitoring/disk-agent-setup' type='service' version='1'>
+    <create_default_instance enabled='true'/>
+    <single_instance/>
+
+    <dependency name='filesystems' grouping='require_all' restart_on='none' type='service'>
+      <service_fmri value='svc:/system/filesystem/local:default'/>
+    </dependency>
+
+    <exec_method name='start' type='method' exec='/opt/disk-agent/setup.sh' timeout_seconds='60'>
+      <method_context>
+        <method_credential user='root' group='root' />
+        <method_environment>
+          <envvar name='PATH' value='/opt/ooce/bin:/usr/bin:/usr/sbin:/sbin'/>
+        </method_environment>
+      </method_context>
+    </exec_method>
+
+    <exec_method name='stop' type='method' exec=':true' timeout_seconds='30' />
+
+    <property_group name='startd' type='framework'>
+      <propval name='duration' type='astring' value='transient' />
+    </property_group>
+
+    <stability value='Evolving' />
+
+    <template>
+      <common_name>
+        <loctext xml:lang='C'>Disk Agent host setup</loctext>
+      </common_name>
+      <description>
+        <loctext xml:lang='C'>
+          Enables smartd with the Disk Agent warning hook so SMART changes
+          reach the agent as they are found.
+        </loctext>
+      </description>
+    </template>
+  </service>
+</service_bundle>

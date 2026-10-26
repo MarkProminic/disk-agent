@@ -1,0 +1,1 @@
+ACTION=="add|remove", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", RUN+="/usr/lib/disk-agent/trigger.sh device $env{ACTION} $env{DEVNAME}"

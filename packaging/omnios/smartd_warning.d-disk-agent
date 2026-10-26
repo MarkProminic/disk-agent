@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /opt/disk-agent/trigger.sh smart "$SMARTD_FAILTYPE" "$SMARTD_DEVICE"

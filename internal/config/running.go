@@ -48,6 +48,7 @@ func (c *Config) runningValues() ([]runningValue, error) {
 		{"app", []string{"ssl", "ca_cert_path"}, c.SSLCACertPath()},
 		{"app", []string{"ssl", "ca_key_path"}, c.SSLCAKeyPath()},
 		{"app", []string{"logging", "file"}, logFile},
+		{"app", []string{"server", "trigger_socket"}, c.TriggerSocketPath()},
 	}, nil
 }
 

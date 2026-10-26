@@ -8,12 +8,14 @@ import (
 
 	"github.com/MarkProminic/disk-agent/internal/collector"
 	"github.com/MarkProminic/disk-agent/internal/config"
+	"github.com/MarkProminic/disk-agent/internal/discovery"
 	"github.com/MarkProminic/disk-agent/internal/disks"
 	"github.com/MarkProminic/disk-agent/internal/keys"
 	"github.com/MarkProminic/disk-agent/internal/pools"
 )
 
-// Server is the agent's HTTP (and optional HTTPS) server.
+// Server is the agent's HTTP (and optional HTTPS) server, its trigger socket
+// and its mDNS advertisement.
 type Server struct {
 	cfg       *config.Config
 	keys      *keys.Store
@@ -26,6 +28,11 @@ type Server struct {
 	// loaded; certificate problems leave the agent HTTP-only, never down.
 	httpsSrv      *http.Server
 	httpsListener net.Listener
+
+	triggerSrv      *http.Server
+	triggerListener net.Listener
+
+	advertiser *discovery.Advertiser
 }
 
 // New builds the server and its routes.

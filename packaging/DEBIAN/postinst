@@ -24,6 +24,8 @@ for name in app auth; do
 done
 
 systemctl daemon-reload || true
+udevadm control --reload-rules || true
+systemctl try-restart zfs-zed || true
 
 echo ""
 echo "======================================================================"

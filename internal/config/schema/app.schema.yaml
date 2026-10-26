@@ -51,6 +51,22 @@ properties:
         order: 3
         requiresRestart: true
         restartReason: the HTTPS listener is bound at boot
+      trigger_socket:
+        type: string
+        default: ''
+        title: Trigger socket
+        description: The unix socket the host's ZED, sysevent, smartd and hot-plug hooks POST to; empty = trigger.sock beside the configuration files
+        order: 4
+        requiresRestart: true
+        restartReason: the socket is bound at boot
+      discovery:
+        type: boolean
+        default: true
+        title: mDNS discovery
+        description: Advertise the agent as _disk-agent._tcp so Home Assistant offers it
+        order: 5
+        requiresRestart: true
+        restartReason: the advertisement is registered at boot
   ssl:
     type: object
     section: application

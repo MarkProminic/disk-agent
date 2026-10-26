@@ -30,4 +30,5 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/report", requireKey(http.HandlerFunc(s.handleReport)))
 	mux.Handle("GET /api/disks", requireKey(http.HandlerFunc(s.handleDisks)))
 	mux.Handle("GET /api/pools", requireKey(http.HandlerFunc(s.handlePools)))
+	mux.Handle("GET /api/events", requireKey(http.HandlerFunc(s.handleEvents)))
 }

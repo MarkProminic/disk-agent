@@ -52,9 +52,13 @@ jobs:
           ARCH=amd64
           STAGE="dist/disk-agent_${VERSION}_${ARCH}"
           mkdir -p "$STAGE"/usr/bin \
+                   "$STAGE"/usr/lib/disk-agent \
                    "$STAGE"/etc/disk-agent \
                    "$STAGE"/etc/systemd/system \
                    "$STAGE"/etc/sudoers.d \
+                   "$STAGE"/etc/zfs/zed.d \
+                   "$STAGE"/etc/smartmontools/run.d \
+                   "$STAGE"/etc/udev/rules.d \
                    "$STAGE"/usr/share/man/man8 \
                    "$STAGE"/usr/share/man/man5 \
                    "$STAGE"/usr/share/disk-agent/config \
@@ -63,6 +67,10 @@ jobs:
           cp internal/config/seed/*.config.yaml "$STAGE/usr/share/disk-agent/config/"
           cp packaging/DEBIAN/systemd/disk-agent.service "$STAGE/etc/systemd/system/"
           cp packaging/DEBIAN/sudoers/disk-agent "$STAGE/etc/sudoers.d/disk-agent"
+          cp packaging/DEBIAN/hooks/trigger.sh "$STAGE/usr/lib/disk-agent/trigger.sh"
+          cp packaging/DEBIAN/hooks/all-disk-agent.sh "$STAGE/etc/zfs/zed.d/all-disk-agent.sh"
+          cp packaging/DEBIAN/hooks/20disk-agent "$STAGE/etc/smartmontools/run.d/20disk-agent"
+          cp packaging/DEBIAN/udev/90-disk-agent.rules "$STAGE/etc/udev/rules.d/90-disk-agent.rules"
           gzip -9 -c packaging/DEBIAN/man/disk-agent.8 > "$STAGE/usr/share/man/man8/disk-agent.8.gz"
           gzip -9 -c packaging/DEBIAN/man/disk-agent.yaml.5 > "$STAGE/usr/share/man/man5/disk-agent.yaml.5.gz"
           cp packaging/DEBIAN/postinst packaging/DEBIAN/prerm packaging/DEBIAN/postrm "$STAGE/DEBIAN/"
@@ -73,18 +81,20 @@ jobs:
           Section: admin
           Priority: optional
           Architecture: ${ARCH}
-          Depends: adduser, sudo, smartmontools, zfsutils-linux
+          Depends: adduser, sudo, curl, smartmontools, zfsutils-linux, zfs-zed
           Maintainer: Makr91 <makr91@users.noreply.github.com>
           Description: Disk Agent - SMART and ZFS pool state for Home Assistant
            Single-binary host agent that serves the SMART state of every disk
-           and the state of every ZFS pool as JSON over HTTP for the
-           ha_disk_monitor Home Assistant integration to poll.
+           and the state of every ZFS pool as JSON over HTTP and as an event
+           stream for the ha_disk_monitor Home Assistant integration, refreshed
+           by the host's ZED, smartd and udev hooks.
           Homepage: https://github.com/MarkProminic/disk-agent
           EOF
 
           find "$STAGE" -type d -exec chmod 755 {} \;
           find "$STAGE" -type f -exec chmod 644 {} \;
-          chmod 755 "$STAGE/usr/bin/disk-agent" "$STAGE/DEBIAN"/postinst "$STAGE/DEBIAN"/prerm "$STAGE/DEBIAN"/postrm
+          chmod 755 "$STAGE/usr/bin/disk-agent" "$STAGE/DEBIAN"/postinst "$STAGE/DEBIAN"/prerm "$STAGE/DEBIAN"/postrm \
+                    "$STAGE/usr/lib/disk-agent/trigger.sh" "$STAGE/etc/zfs/zed.d/all-disk-agent.sh" "$STAGE/etc/smartmontools/run.d/20disk-agent"
           chmod 440 "$STAGE/etc/sudoers.d/disk-agent"
 
           dpkg-deb --build --root-owner-group "$STAGE" "dist/disk-agent_${VERSION}_${ARCH}.deb"

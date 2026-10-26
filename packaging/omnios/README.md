@@ -23,6 +23,10 @@ This directory contains the files needed to build an OmniOS IPS package for the 
 
 - `disk-agent-smf.xml` - SMF service manifest (stop method uses SMF's `:kill` token)
 - `startup.sh` - Service startup script
+- `disk-agent-setup-smf.xml`, `setup.sh` - transient root service that enables smartd with the warning hook at every boot
+- `trigger.sh` - POSTs a trigger to the agent's unix socket `/etc/disk-agent/trigger.sock`
+- `disk-agent.sysevent.conf` - installed as `/etc/sysevent/config/DiskAgent,sysevent.conf`; syseventd runs `trigger.sh` on every EC_zfs, EC_dev_add and EC_dev_remove event
+- `smartd_warning.d-disk-agent` - installed into `/etc/opt/ooce/smartmontools/smartd_warning.d/`; smartd runs it on every warning
 - `disk-agent.prof_attr`, `disk-agent.exec_attr` - the Disk Agent RBAC profile: smartctl and zpool as root, nothing else
 - `disk-agent.user_attr` - grants that profile to the service user
 
@@ -34,6 +38,7 @@ This directory contains the files needed to build an OmniOS IPS package for the 
 ## Dependencies
 
 - **smartmontools**: `ooce/system/smartmontools`
+- **curl**: `web/curl`
 
 ## Installation
 

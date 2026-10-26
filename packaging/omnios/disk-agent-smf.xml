@@ -13,6 +13,10 @@
       <service_fmri value='svc:/milestone/network:default'/>
     </dependency>
 
+    <dependency name='setup' grouping='optional_all' restart_on='none' type='service'>
+      <service_fmri value='svc:/system/monitoring/disk-agent-setup:default'/>
+    </dependency>
+
     <exec_method name='start' type='method' exec='/opt/disk-agent/startup.sh' timeout_seconds='60'>
       <method_context working_directory='/opt/disk-agent'>
         <method_credential user='diskagent' group='diskagent'

@@ -38,13 +38,13 @@ func hostname() string {
 }
 
 // @Summary		Every disk and pool of the host
-// @Description	Minimum role: viewer. Runs smartctl over every device it can scan and zpool over every pool, then answers both lists with the collection time; disks are keyed by serial, pools by name. A scanned device that answers no serial, a stale node of a pulled disk among them, is listed under unreadable with its error instead of among the disks. disk_error and pool_error carry the failure of a whole collection.
+// @Description	Minimum role: viewer. The current report: every disk keyed by serial and every pool by name, with the time of the last refresh. The report is refreshed by the host's own event hooks, never by this request. A scanned device that answers no serial, a stale node of a pulled disk among them, is listed under unreadable with its error. disk_error and pool_error carry the failure of a whole collection.
 // @Tags			Report
 // @Produce		json
 // @Success		200	{object}	reportResponse	"The report"
 // @Router			/api/report [get]
-func (s *Server) handleReport(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, reportResponse{Hostname: hostname(), Report: s.collector.Report(r.Context())})
+func (s *Server) handleReport(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, reportResponse{Hostname: hostname(), Report: s.collector.Current()})
 }
 
 // @Summary		Every disk of the host
@@ -53,8 +53,8 @@ func (s *Server) handleReport(w http.ResponseWriter, r *http.Request) {
 // @Produce		json
 // @Success		200	{object}	disksResponse	"The disks"
 // @Router			/api/disks [get]
-func (s *Server) handleDisks(w http.ResponseWriter, r *http.Request) {
-	report := s.collector.Report(r.Context())
+func (s *Server) handleDisks(w http.ResponseWriter, _ *http.Request) {
+	report := s.collector.Current()
 	writeJSON(w, disksResponse{Hostname: hostname(), CollectedAt: report.CollectedAt, Disks: report.Disks, Unreadable: report.Unreadable, Error: report.DiskError})
 }
 
@@ -64,7 +64,7 @@ func (s *Server) handleDisks(w http.ResponseWriter, r *http.Request) {
 // @Produce		json
 // @Success		200	{object}	poolsResponse	"The pools"
 // @Router			/api/pools [get]
-func (s *Server) handlePools(w http.ResponseWriter, r *http.Request) {
-	report := s.collector.Report(r.Context())
+func (s *Server) handlePools(w http.ResponseWriter, _ *http.Request) {
+	report := s.collector.Current()
 	writeJSON(w, poolsResponse{Hostname: hostname(), CollectedAt: report.CollectedAt, Pools: report.Pools, Error: report.PoolError})
 }

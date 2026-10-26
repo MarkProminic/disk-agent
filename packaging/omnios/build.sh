@@ -58,8 +58,18 @@ install_app() {
 
     logcmd cp $SRCDIR/packaging/omnios/startup.sh .
     logcmd chmod 755 startup.sh
+    logcmd cp $SRCDIR/packaging/omnios/setup.sh .
+    logcmd chmod 755 setup.sh
+    logcmd cp $SRCDIR/packaging/omnios/trigger.sh .
+    logcmd chmod 755 trigger.sh
 
     popd >/dev/null
+
+    logmsg "Installing host event hooks"
+    logcmd mkdir -p etc/sysevent/config etc/opt/ooce/smartmontools/smartd_warning.d
+    logcmd cp $SRCDIR/packaging/omnios/disk-agent.sysevent.conf etc/sysevent/config/DiskAgent,sysevent.conf
+    logcmd cp $SRCDIR/packaging/omnios/smartd_warning.d-disk-agent etc/opt/ooce/smartmontools/smartd_warning.d/disk-agent
+    logcmd chmod 755 etc/opt/ooce/smartmontools/smartd_warning.d/disk-agent
 
     logmsg "Installing configuration files"
     logcmd mkdir -p etc/disk-agent
@@ -79,6 +89,7 @@ install_app() {
     logmsg "Installing SMF manifest"
     logcmd mkdir -p lib/svc/manifest/system
     logcmd cp $SRCDIR/packaging/omnios/disk-agent-smf.xml lib/svc/manifest/system/disk-agent.xml
+    logcmd cp $SRCDIR/packaging/omnios/disk-agent-setup-smf.xml lib/svc/manifest/system/disk-agent-setup.xml
 
     logmsg "Installing man pages"
     logcmd mkdir -p opt/ooce/share/man/man8 opt/ooce/share/man/man5

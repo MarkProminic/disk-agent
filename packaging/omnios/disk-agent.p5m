@@ -17,6 +17,7 @@ set name=info.upstream value="Makr91"
 set name=info.upstream-url value="https://github.com/MarkProminic/disk-agent"
 
 depend fmri=ooce/system/smartmontools type=require
+depend fmri=web/curl type=require
 
 user username=diskagent uid=302 group=diskagent gcos-field="Disk Agent Service User" \
     home-dir=/var/lib/disk-agent login-shell=/usr/bin/bash
@@ -38,6 +39,12 @@ license opt/disk-agent/LICENSE.md license="GPL-3.0" must-accept=false
 <transform dir path=opt/ooce/share/man$ -> drop>
 <transform dir path=opt/ooce/share/man/man8$ -> drop>
 <transform dir path=opt/ooce/share/man/man5$ -> drop>
+<transform dir path=etc/sysevent$ -> drop>
+<transform dir path=etc/sysevent/config$ -> drop>
+<transform dir path=etc/opt$ -> drop>
+<transform dir path=etc/opt/ooce$ -> drop>
+<transform dir path=etc/opt/ooce/smartmontools$ -> drop>
+<transform dir path=etc/opt/ooce/smartmontools/smartd_warning.d$ -> drop>
 
 <transform dir path=opt/disk-agent$ -> set owner diskagent>
 <transform dir path=opt/disk-agent$ -> set group diskagent>
@@ -52,6 +59,23 @@ license opt/disk-agent/LICENSE.md license="GPL-3.0" must-accept=false
 <transform file path=opt/disk-agent/startup.sh -> set owner root>
 <transform file path=opt/disk-agent/startup.sh -> set group sys>
 <transform file path=opt/disk-agent/startup.sh -> set mode 0755>
+
+<transform file path=opt/disk-agent/setup.sh -> set owner root>
+<transform file path=opt/disk-agent/setup.sh -> set group sys>
+<transform file path=opt/disk-agent/setup.sh -> set mode 0755>
+
+<transform file path=opt/disk-agent/trigger.sh -> set owner root>
+<transform file path=opt/disk-agent/trigger.sh -> set group sys>
+<transform file path=opt/disk-agent/trigger.sh -> set mode 0755>
+
+<transform file path=etc/sysevent/config/DiskAgent,sysevent.conf -> set owner root>
+<transform file path=etc/sysevent/config/DiskAgent,sysevent.conf -> set group sys>
+<transform file path=etc/sysevent/config/DiskAgent,sysevent.conf -> set mode 0644>
+<transform file path=etc/sysevent/config/DiskAgent,sysevent.conf -> set restart_fmri svc:/system/sysevent:default>
+
+<transform file path=etc/opt/ooce/smartmontools/smartd_warning.d/disk-agent -> set owner root>
+<transform file path=etc/opt/ooce/smartmontools/smartd_warning.d/disk-agent -> set group bin>
+<transform file path=etc/opt/ooce/smartmontools/smartd_warning.d/disk-agent -> set mode 0755>
 
 <transform dir path=etc/disk-agent$ -> set owner diskagent>
 <transform dir path=etc/disk-agent$ -> set group diskagent>
@@ -99,3 +123,8 @@ license opt/disk-agent/LICENSE.md license="GPL-3.0" must-accept=false
 <transform file path=lib/svc/manifest/system/disk-agent.xml -> set group sys>
 <transform file path=lib/svc/manifest/system/disk-agent.xml -> set mode 0644>
 <transform file path=lib/svc/manifest/system/disk-agent.xml -> set restart_fmri svc:/system/manifest-import:default>
+
+<transform file path=lib/svc/manifest/system/disk-agent-setup.xml -> set owner root>
+<transform file path=lib/svc/manifest/system/disk-agent-setup.xml -> set group sys>
+<transform file path=lib/svc/manifest/system/disk-agent-setup.xml -> set mode 0644>
+<transform file path=lib/svc/manifest/system/disk-agent-setup.xml -> set restart_fmri svc:/system/manifest-import:default>

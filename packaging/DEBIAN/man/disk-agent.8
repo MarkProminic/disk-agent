@@ -76,14 +76,20 @@ The public identity and capability probe:
 .Pp
 .Dl http://0.0.0.0:9430/api/status
 .Pp
-Behind an API key, the report the Home Assistant integration polls:
+Behind an API key, the current report and the stream the Home Assistant
+integration holds open:
 .Pp
 .Dl GET /api/report
 .Dl GET /api/disks
 .Dl GET /api/pools
+.Dl GET /api/events
 .Pp
-Each request runs smartctl over every device and zpool over every pool;
-concurrent requests share one run.
+No request collects anything. The host's own daemons refresh the report
+through the trigger socket beside the configuration files: ZED and
+syseventd on every ZFS event, smartd on every SMART warning, udev and the
+device sysevents on hot plug. Every refresh is written to each open
+.Pa /api/events
+stream.
 .Pp
 With
 .Cm ssl.enabled

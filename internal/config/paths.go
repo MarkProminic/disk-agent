@@ -54,3 +54,12 @@ func (c *Config) LogFilePath() (string, error) {
 func (c *Config) KeyStorePath() string {
 	return filepath.Join(c.dir, "keys.json")
 }
+
+// TriggerSocketPath returns the trigger socket location: server.trigger_socket
+// when configured, else trigger.sock beside the configuration files.
+func (c *Config) TriggerSocketPath() string {
+	if c.Server.TriggerSocket != "" {
+		return c.Server.TriggerSocket
+	}
+	return filepath.Join(c.dir, "trigger.sock")
+}

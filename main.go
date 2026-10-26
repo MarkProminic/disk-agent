@@ -1,10 +1,12 @@
 // Disk Agent serves the SMART state of every disk and the state of every ZFS
-// pool of its host as JSON over HTTP for the ha_disk_monitor Home Assistant
-// integration to poll.
+// pool of its host as JSON over HTTP and as a server-sent-event stream for the
+// ha_disk_monitor Home Assistant integration. The host's own ZED, sysevent,
+// smartd and hot-plug hooks refresh the report through a unix socket; nothing
+// runs on a clock.
 //
 //	@title			Disk Agent API
 //	@version		1.0.0
-//	@description	Disk Agent API v1. The public GET /api/status and GET /api/health need no credential; every other route takes an API key as X-API-Key or Authorization: Bearer. Keys are made on the host with disk-agent key add.
+//	@description	Disk Agent API v1. The public GET /api/status and GET /api/health need no credential; every other route takes an API key as X-API-Key or Authorization: Bearer. Keys are made on the host with disk-agent key add. GET /api/events streams a report on connect and on every change.
 //	@license.name	GPL-3.0
 //	@license.url	https://github.com/MarkProminic/disk-agent/blob/main/LICENSE.md
 //	@contact.name	Disk Agent
@@ -16,7 +18,7 @@
 //	@tag.name		System
 //	@tag.description	Version and host information
 //	@tag.name		Report
-//	@tag.description	The SMART state of every disk and the state of every ZFS pool, collected when asked
+//	@tag.description	The SMART state of every disk and the state of every ZFS pool, refreshed by the host's event hooks
 package main
 
 import (

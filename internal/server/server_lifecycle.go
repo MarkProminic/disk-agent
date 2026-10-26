@@ -12,11 +12,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/MarkProminic/disk-agent/internal/discovery"
 	"github.com/MarkProminic/disk-agent/internal/sslcert"
+	"github.com/MarkProminic/disk-agent/internal/version"
 )
 
-// Listen binds the configured address without serving yet. The HTTPS
-// listener binds afterwards, non-fatally.
+// Listen binds the configured address and the trigger socket without serving
+// yet. The HTTPS listener binds afterwards, non-fatally.
 func (s *Server) Listen() error {
 	listener, err := s.listen()
 	if err != nil {
@@ -24,6 +26,10 @@ func (s *Server) Listen() error {
 	}
 	s.listener = listener
 	s.listenHTTPS()
+	if terr := s.listenTrigger(); terr != nil {
+		_ = listener.Close()
+		return terr
+	}
 	return nil
 }
 
@@ -116,15 +122,45 @@ func (s *Server) httpsRedirect() http.Handler {
 	})
 }
 
-// Start blocks serving HTTP until Shutdown is called or the listener fails.
-// The HTTPS server (when up) serves on its own goroutine; its failure never
-// takes the HTTP surface down.
+// advertise registers the mDNS service on the port the integration should
+// use, HTTPS when it is up; a failure logs and the agent runs undiscovered.
+func (s *Server) advertise() {
+	if !s.cfg.Server.Discovery {
+		return
+	}
+	port, scheme := s.cfg.Server.Port, "http"
+	if s.httpsSrv != nil && s.httpsListener != nil {
+		port, scheme = s.cfg.Server.HTTPSPort, "https"
+	}
+	advertiser, err := discovery.Advertise(port, scheme, version.Version)
+	if err != nil {
+		slog.Error("mDNS advertisement failed; agent runs undiscovered", "error", err)
+		return
+	}
+	s.advertiser = advertiser
+	slog.Info("mDNS advertisement up", "service", discovery.Service, "port", port, "scheme", scheme)
+}
+
+// Start takes the first report, serves the trigger socket and HTTPS on their
+// own goroutines, advertises, then blocks serving HTTP until Shutdown is
+// called or the listener fails.
 func (s *Server) Start() error {
 	if s.listener == nil {
 		if err := s.Listen(); err != nil {
 			return err
 		}
 	}
+
+	report := s.collector.CollectAll(context.Background())
+	slog.Info("initial collection", "disks", len(report.Disks), "pools", len(report.Pools), "unreadable", len(report.Unreadable))
+
+	go func() {
+		serveErr := s.triggerSrv.Serve(s.triggerListener)
+		if serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
+			slog.Error("trigger socket failed", "error", serveErr)
+		}
+	}()
+	slog.Info("trigger socket listening", "path", s.cfg.TriggerSocketPath())
 
 	if s.httpsSrv != nil && s.httpsListener != nil {
 		slog.Info("https server listening", "addr", s.httpsSrv.Addr)
@@ -135,6 +171,8 @@ func (s *Server) Start() error {
 			}
 		}()
 	}
+
+	s.advertise()
 
 	slog.Info("http server listening", "addr", s.httpSrv.Addr)
 	err := s.httpSrv.Serve(s.listener)
@@ -150,13 +188,20 @@ func (s *Server) listen() (net.Listener, error) {
 	return listenConfig.Listen(context.Background(), "tcp", s.cfg.ListenAddr())
 }
 
-// Shutdown gracefully drains connections on both listeners.
+// Shutdown withdraws the advertisement and drains every listener.
 func (s *Server) Shutdown(ctx context.Context) error {
+	s.advertiser.Shutdown()
 	err := s.httpSrv.Shutdown(ctx)
 	if s.httpsSrv != nil {
 		if herr := s.httpsSrv.Shutdown(ctx); herr != nil {
 			err = errors.Join(err, herr)
 		}
+	}
+	if s.triggerSrv != nil {
+		if terr := s.triggerSrv.Shutdown(ctx); terr != nil {
+			err = errors.Join(err, terr)
+		}
+		_ = os.Remove(s.cfg.TriggerSocketPath())
 	}
 	return err
 }

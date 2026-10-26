@@ -1,6 +1,8 @@
 # Disk Agent
 
-**Disk Agent** serves the SMART state of every disk and the state of every ZFS pool of its host as JSON over HTTP, for the [ha_disk_monitor](https://github.com/MarkProminic/ha_disk_monitor) Home Assistant integration to poll. It is a single Go binary that runs under systemd on Debian and under SMF on OmniOS.
+**Disk Agent** serves the SMART state of every disk and the state of every ZFS pool of its host as JSON over HTTP and as a server-sent-event stream, for the [ha_disk_monitor](https://github.com/MarkProminic/ha_disk_monitor) Home Assistant integration. It is a single Go binary that runs under systemd on Debian and under SMF on OmniOS.
+
+Nothing runs on a clock. The host's own daemons refresh the report through the agent's trigger socket: ZED on Linux and syseventd on illumos on every ZFS event, smartd on both on every SMART change it finds, udev and the device sysevents on hot plug. The agent advertises itself as `_disk-agent._tcp` over mDNS so Home Assistant offers it.
 
 ## Getting started
 

@@ -33,7 +33,7 @@ type statusPayload struct {
 	Uptime int64 `json:"uptime"`
 }
 
-var platformFeatures = []string{"health", "disks", "pools"}
+var platformFeatures = []string{"health", "disks", "pools", "events"}
 
 func archName() string {
 	switch runtime.GOARCH {

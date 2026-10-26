@@ -1,12 +1,18 @@
 // Package config loads and provides the agent's YAML configuration.
 package config
 
-// ServerConfig controls the HTTP and HTTPS listeners.
+// ServerConfig controls the HTTP and HTTPS listeners, the trigger socket and
+// the mDNS advertisement.
 type ServerConfig struct {
 	BindAddress string `yaml:"bind_address" json:"bind_address"`
 	Port        int    `yaml:"port"         json:"port"`
 	// HTTPSPort is the TLS listener's port; bound only when ssl.enabled.
 	HTTPSPort int `yaml:"https_port" json:"https_port"`
+	// TriggerSocket is the unix socket the host's event hooks POST to. Empty
+	// selects trigger.sock beside the configuration files.
+	TriggerSocket string `yaml:"trigger_socket" json:"trigger_socket"`
+	// Discovery advertises the agent as _disk-agent._tcp over mDNS.
+	Discovery bool `yaml:"discovery" json:"discovery"`
 }
 
 // SSLConfig controls the agent's HTTPS listener: certificate problems never
